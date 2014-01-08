@@ -1,0 +1,1275 @@
+#
+# Copyright (C) 2003-2013 Sebastien Helleu <flashcode@flashtux.org>
+# Copyright (C) 2005 Benoit Papillault <benoit.papillault@free.fr>
+# Copyright (C) 2005-2006 Julien Louis <ptitlouis@sysif.net>
+# Copyright (C) 2005-2009 Emmanuel Bouthenot <kolter@openics.org>
+#
+# This file is part of WeeChat, the extensible chat client.
+#
+# WeeChat is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# WeeChat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with WeeChat.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.56)
+AC_INIT(WeeChat, 0.4.2, flashcode@flashtux.org)
+AC_CONFIG_SRCDIR([configure.ac])
+AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE
+LICENSE="GPL3"
+
+# Checks for programs
+AC_PROG_CC
+AC_PROG_MAKE_SET
+AC_GNU_SOURCE
+AC_PROG_LN_S
+AM_PROG_LIBTOOL
+
+# Files to generate
+AC_CONFIG_FILES([weechat.pc])
+
+# Add some flags for some OS
+case "$host_os" in
+freebsd* | openbsd*)
+        CFLAGS="$CFLAGS -I/usr/local/include"
+        LDFLAGS="$LDFLAGS -L/usr/local/lib"
+        ;;
+netbsd*)
+        CFLAGS="$CFLAGS -I/usr/pkg/include"
+        LDFLAGS="$LDFLAGS -L/usr/pkg/lib"
+        ;;
+solaris*)
+        LDFLAGS="$LDFLAGS -lsocket -lxnet"
+        ;;
+esac
+
+# Gettext
+ALL_LINGUAS="fr es cs hu de ru pl it ja pt_BR tr"
+AM_GNU_GETTEXT
+AM_GNU_GETTEXT_VERSION([0.18])
+
+# Checks for libraries
+AC_CHECK_LIB(ncurses, initscr, LIBNCURSES_FOUND=1, LIBNCURSES_FOUND=0)
+AC_CHECK_LIB(ncursesw, initscr, LIBNCURSESW_FOUND=1, LIBNCURSESW_FOUND=0)
+
+# Checks for header files
+AC_HEADER_STDC
+AC_CHECK_HEADERS([libintl.h sys/resource.h])
+
+# Checks for typedefs, structures, and compiler characteristics
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+AC_MSG_CHECKING([for socklen_t])
+AC_CACHE_VAL(ac_cv_type_socklen_t,
+[AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[ #include <sys/types.h>
+#include <sys/socket.h> ]],
+[[ socklen_t t; ]])],
+[ ac_cv_type_socklen_t=yes ],
+[ ac_cv_type_socklen_t=no ],
+)])
+if test $ac_cv_type_socklen_t = no; then
+AC_DEFINE(socklen_t, int, Define to 'int' if <sys/socket.h> doesn't define.)
+fi
+AC_MSG_RESULT($ac_cv_type_socklen_t)
+
+# Checks for library functions.
+AC_FUNC_SELECT_ARGTYPES
+AC_TYPE_SIGNAL
+AC_CHECK_FUNCS([mallinfo])
+
+# Variables in config.h
+
+AH_VERBATIM([PREFIX],                  [#undef PREFIX])
+AH_VERBATIM([WEECHAT_LIBDIR],          [#undef WEECHAT_LIBDIR])
+AH_VERBATIM([WEECHAT_SHAREDIR],        [#undef WEECHAT_SHAREDIR])
+AH_VERBATIM([HAVE_GNUTLS],             [#undef HAVE_GNUTLS])
+AH_VERBATIM([HAVE_FLOCK],              [#undef HAVE_FLOCK])
+AH_VERBATIM([HAVE_EAT_NEWLINE_GLITCH], [#undef HAVE_EAT_NEWLINE_GLITCH])
+AH_VERBATIM([PLUGIN_ALIAS],            [#undef PLUGIN_ALIAS])
+AH_VERBATIM([PLUGIN_ASPELL],           [#undef PLUGIN_ASPELL])
+AH_VERBATIM([PLUGIN_CHARSET],          [#undef PLUGIN_CHARSET])
+AH_VERBATIM([PLUGIN_FIFO],             [#undef PLUGIN_FIFO])
+AH_VERBATIM([PLUGIN_IRC],              [#undef PLUGIN_IRC])
+AH_VERBATIM([PLUGIN_LOGGER],           [#undef PLUGIN_LOGGER])
+AH_VERBATIM([PLUGIN_RELAY],            [#undef PLUGIN_RELAY])
+AH_VERBATIM([PLUGIN_RMODIFIER],        [#undef PLUGIN_RMODIFIER])
+AH_VERBATIM([PLUGIN_SCRIPT],           [#undef PLUGIN_SCRIPT])
+AH_VERBATIM([PLUGIN_PERL],             [#undef PLUGIN_PERL])
+AH_VERBATIM([PLUGIN_PYTHON],           [#undef PLUGIN_PYTHON])
+AH_VERBATIM([PLUGIN_RUBY],             [#undef PLUGIN_RUBY])
+AH_VERBATIM([PLUGIN_LUA],              [#undef PLUGIN_LUA])
+AH_VERBATIM([PLUGIN_TCL],              [#undef PLUGIN_TCL])
+AH_VERBATIM([PLUGIN_GUILE],            [#undef PLUGIN_GUILE])
+AH_VERBATIM([PLUGIN_XFER],             [#undef PLUGIN_XFER])
+AH_VERBATIM([MAN],                     [#undef MAN])
+AH_VERBATIM([DOC],                     [#undef DOC])
+AH_VERBATIM([WEECHAT_HOME],            [#define WEECHAT_HOME "~/.weechat"])
+AH_VERBATIM([CA_FILE],                 [#define CA_FILE "/etc/ssl/certs/ca-certificates.crt"])
+
+# Arguments for ./configure
+
+AC_ARG_ENABLE(ncurses,      [  --disable-ncurses       turn off ncurses interface (default=compiled if found)],enable_ncurses=$enableval,enable_ncurses=yes)
+AC_ARG_ENABLE(gnutls,       [  --disable-gnutls        turn off gnutls support (default=compiled if found)],enable_gnutls=$enableval,enable_gnutls=yes)
+AC_ARG_ENABLE(largefile,    [  --disable-largefile     turn off Large File Support (default=on)],enable_largefile=$enableval,enable_largefile=yes)
+AC_ARG_ENABLE(alias,        [  --disable-alias         turn off Alias plugin (default=compiled)],enable_alias=$enableval,enable_alias=yes)
+AC_ARG_ENABLE(aspell,       [  --disable-aspell        turn off Aspell plugin (default=compiled)],enable_aspell=$enableval,enable_aspell=yes)
+AC_ARG_ENABLE(enchant,      [  --enable-enchant        turn on Enchant lib for Aspell plugin (default=off)],enable_enchant=$enableval,enable_enchant=no)
+AC_ARG_ENABLE(charset,      [  --disable-charset       turn off Charset plugin (default=compiled if found)],enable_charset=$enableval,enable_charset=yes)
+AC_ARG_ENABLE(fifo,         [  --disable-fifo          turn off Fifo plugin (default=compiled)],enable_fifo=$enableval,enable_fifo=yes)
+AC_ARG_ENABLE(irc,          [  --disable-irc           turn off IRC plugin (default=compiled)],enable_irc=$enableval,enable_irc=yes)
+AC_ARG_ENABLE(logger,       [  --disable-logger        turn off Logger plugin (default=compiled)],enable_logger=$enableval,enable_logger=yes)
+AC_ARG_ENABLE(relay,        [  --disable-relay         turn off Relay plugin (default=compiled)],enable_relay=$enableval,enable_relay=yes)
+AC_ARG_ENABLE(rmodifier,    [  --disable-rmodifier     turn off Rmodifier plugin (default=compiled)],enable_rmodifier=$enableval,enable_rmodifier=yes)
+AC_ARG_ENABLE(script,       [  --disable-script        turn off Script plugin (default=compiled)],enable_script=$enableval,enable_script=yes)
+AC_ARG_ENABLE(scripts,      [  --disable-scripts       turn off script plugins (perl, python, ...) (default=compiled if found)],enable_scripts=$enableval,enable_scripts=yes)
+AC_ARG_ENABLE(perl,         [  --disable-perl          turn off Perl script plugin (default=compiled if found)],enable_perl=$enableval,enable_perl=yes)
+AC_ARG_ENABLE(python,       [  --disable-python        turn off Python script plugin (default=compiled if found)],enable_python=$enableval,enable_python=yes)
+AC_ARG_ENABLE(python3,      [  --enable-python3        use Python 3.x if found (NOT recommended) (default=off)],enable_python3=$enableval,enable_python3=no)
+AC_ARG_ENABLE(ruby,         [  --disable-ruby          turn off Ruby script plugin (default=compiled if found)],enable_ruby=$enableval,enable_ruby=yes)
+AC_ARG_ENABLE(lua,          [  --disable-lua           turn off Lua script plugin (default=compiled if found)],enable_lua=$enableval,enable_lua=yes)
+AC_ARG_ENABLE(tcl,          [  --disable-tcl           turn off Tcl script plugin (default=compiled if found)],enable_tcl=$enableval,enable_tcl=yes)
+AC_ARG_ENABLE(guile,        [  --disable-guile         turn off Guile (scheme) script plugin (default=compiled if found)],enable_guile=$enableval,enable_guile=yes)
+AC_ARG_ENABLE(xfer,         [  --disable-xfer          turn off Xfer (file transfer) plugin (default=compiled if found)],enable_xfer=$enableval,enable_xfer=yes)
+AC_ARG_WITH(lua-inc,        [  --with-lua-inc=DIR,     lua include files are in DIR (default=autodetect)],lua_inc=$withval,lua_inc='')
+AC_ARG_WITH(lua-lib,        [  --with-lua-lib=DIR,     lua library files are in DIR (default=autodetect)],lua_lib=$withval,lua_lib='')
+AC_ARG_WITH(lua-suffix,     [  --with-lua-suffix=ARG   lua is suffixed with ARG (default=autodetect)],lua_suffix=$withval,lua_suffix='')
+AC_ARG_WITH(tclconfig,      [  --with-tclconfig=DIR    directory containing tcl configuration (tclConfig.sh)],tclconfig=$withval,tclconfig='')
+AC_ARG_ENABLE(man,          [  --enable-man            turn on build of man page (default=not built)],enable_man=$enableval,enable_man=no)
+AC_ARG_ENABLE(doc,          [  --enable-doc            turn on build of documentation (default=not built)],enable_doc=$enableval,enable_doc=no)
+AC_ARG_WITH(debug,          [  --with-debug            debugging: 0=no debug, 1=debug compilation (default=1)],debug=$withval,debug=1)
+
+AC_ARG_VAR(WEECHAT_HOME, [WeeChat home directory for config, logs, scripts.. (default is "~/.weechat")])
+AC_ARG_VAR(CA_FILE, [File containing the certificate authorities (default is "/etc/ssl/certs/ca-certificates.crt"). This is the default value of option "weechat.network.gnutls_ca_file".])
+
+if test "x$WEECHAT_HOME" = "x" ; then
+    WEECHAT_HOME="~/.weechat"
+fi
+AC_DEFINE_UNQUOTED(WEECHAT_HOME, "$WEECHAT_HOME")
+
+if test "x$CA_FILE" = "x" ; then
+    CA_FILE="/etc/ssl/certs/ca-certificates.crt"
+fi
+AC_DEFINE_UNQUOTED(CA_FILE, "$CA_FILE")
+
+not_asked=""
+not_found=""
+
+# ------------------------------------------------------------------------------
+#                                  pkg-config
+# ------------------------------------------------------------------------------
+
+PKGCONFIG=""
+AC_CHECK_PROGS(PKGCONFIG, pkg-config)
+if test "x$PKGCONFIG" = "x"; then
+    AC_MSG_ERROR([
+*** "pkg-config" couldn't be found on your system.
+*** Try to install it with your software package manager.])
+fi
+
+# ------------------------------------------------------------------------------
+#                                dynamic loader
+# ------------------------------------------------------------------------------
+
+PLUGINS_LFLAGS=
+
+AC_CHECK_FUNCS(dlopen, LIBDL_FOUND=yes, LIBDL_FOUND=no)
+if test "$LIBDL_FOUND" != "yes"; then
+    AC_CHECK_LIB(dl, dlopen, [LIBDL_FOUND=yes; PLUGINS_LFLAGS=-ldl], LIBDL_FOUND=no)
+fi
+if test "$LIBDL_FOUND" != "yes"; then
+    AC_MSG_ERROR([
+*** "dl" library (dynamic library loader) couldn't be found on your system.
+*** Try to install it with your software package manager.])
+fi
+AC_SUBST(PLUGINS_LFLAGS)
+
+# ------------------------------------------------------------------------------
+#                                    gui
+# ------------------------------------------------------------------------------
+
+if test "x$enable_ncurses" = "xyes" ; then
+    if test "$LIBNCURSESW_FOUND" = "0" ; then
+        if test "$LIBNCURSES_FOUND" = "0" ; then
+            AC_MSG_WARN([
+*** ncurses library not found!
+*** WeeChat will be built without ncurses support.])
+            enable_ncurses="no"
+            not_found="$not_found ncurses"
+        else
+            AC_MSG_WARN([
+*** ncursesw library not found! Falling back to "ncurses"
+*** Be careful, UTF-8 display may not work properly if your locale is UTF-8.])
+            NCURSES_LFLAGS="-lncurses"
+        fi
+    else
+        NCURSES_LFLAGS="-lncursesw"
+    fi
+    AC_CHECK_HEADERS([ncurses.h ncursesw/curses.h])
+    AC_SUBST(NCURSES_LFLAGS)
+else
+    not_asked="$not_asked ncurses"
+fi
+
+# ------------------------------------------------------------------------------
+#                                    iconv
+# ------------------------------------------------------------------------------
+
+ICONV_LFLAGS=""
+
+iconv_found="no"
+AC_CHECK_HEADER(iconv.h,ac_found_iconv_header="yes",ac_found_iconv_header="no")
+if test "x$ac_found_iconv_header" = "xyes" ; then
+   AC_CHECK_LIB(iconv,iconv_open,ac_found_iconv_lib="yes",ac_found_iconv_lib="no")
+   if test "x$ac_found_iconv_lib" = "xno" ; then
+      AC_CHECK_LIB(iconv,libiconv_open,ac_found_iconv_lib="yes",ac_found_iconv_lib="no")
+   fi
+   if test "x$ac_found_iconv_lib" = "xyes" ; then
+      ICONV_LFLAGS="-liconv"
+      LIBS="$LIBS $ICONV_LFLAGS"
+   fi
+   AC_MSG_CHECKING(for iconv usability in programs)
+   AC_TRY_RUN([
+        #include <iconv.h>
+        int main(int argc, char **argv) {
+            iconv_t conv = iconv_open("ISO8859-1", "UTF-8");
+            if (conv != (iconv_t) -1) {
+                return 0;
+            }
+            return 1;
+      }],iconv_found="yes")
+  if test "x$iconv_found" = "xno" ; then
+     AC_MSG_RESULT(no)
+  else
+     AC_MSG_RESULT(yes)
+  fi
+fi
+
+if test "x$iconv_found" = "xno" ; then
+   AC_MSG_ERROR([
+*** Iconv headers and/or libraries couldn't be found on your system.
+*** Try to install them with your software package manager.
+*** WeeChat can't be built without Iconv support.])
+fi
+
+# ------------------------------------------------------------------------------
+#                                   plugins
+# ------------------------------------------------------------------------------
+
+if test "x$enable_scripts" = "xno" ; then
+    enable_perl="no"
+    enable_python="no"
+    enable_ruby="no"
+    enable_lua="no"
+    enable_tcl="no"
+    enable_guile="no"
+fi
+
+# ---------------------------------- alias -------------------------------------
+
+if test "x$enable_alias" = "xyes" ; then
+    ALIAS_CFLAGS=""
+    ALIAS_LFLAGS=""
+    AC_SUBST(ALIAS_CFLAGS)
+    AC_SUBST(ALIAS_LFLAGS)
+    AC_DEFINE(PLUGIN_ALIAS)
+else
+    not_asked="$not_asked alias"
+fi
+
+# ---------------------------------- aspell ------------------------------------
+
+if test "x$enable_aspell" = "xyes" ; then
+    ac_found_enchant_lib="no"
+    if test "x$enable_enchant" = "xyes" ; then
+        #PKG_CHECK_MODULES(ENCHANT, [enchant], [CFLAGS="$CFLAGS -DUSE_ENCHANT"],
+        PKG_CHECK_MODULES(ENCHANT, [enchant], ac_found_enchant_lib="yes", ac_found_enchant_lib="no")
+    fi
+    if test "x$ac_found_enchant_lib" = "xyes" ; then
+        CFLAGS="$CFLAGS -DUSE_ENCHANT"
+        ASPELL_LIB_USED="enchant"
+    else
+        ASPELL_CFLAGS=""
+        ASPELL_LFLAGS=""
+
+        AC_CHECK_HEADER(aspell.h,ac_found_aspell_header="yes",ac_found_aspell_header="no")
+        AC_CHECK_LIB(aspell,new_aspell_speller,ac_found_aspell_lib="yes",ac_found_aspell_lib="no")
+
+        AC_MSG_CHECKING(for aspell headers and librairies)
+        if test "x$ac_found_aspell_header" = "xno" -o "x$ac_found_aspell_lib" = "xno" ; then
+            AC_MSG_RESULT(no)
+            AC_MSG_WARN([
+*** Aspell headers and/or libraries couldn't be found on your system.
+*** Try to install them with your software package manager.
+*** WeeChat will be built without Aspell support.])
+            enable_aspell="no"
+            not_found="$not_found aspell"
+        else
+            AC_MSG_RESULT(yes)
+            ASPELL_LFLAGS="$ASPELL_LFLAGS -laspell"
+            ASPELL_LIB_USED="aspell"
+        fi
+    fi
+else
+    not_asked="$not_asked aspell"
+fi
+
+if test "x$enable_aspell" = "xyes" ; then
+    AC_SUBST(ASPELL_CFLAGS)
+    AC_SUBST(ASPELL_LFLAGS)
+    AC_DEFINE(PLUGIN_ASPELL)
+fi
+
+# --------------------------------- charset ------------------------------------
+
+if test "x$enable_charset" = "xyes" ; then
+    CHARSET_CFLAGS=""
+    CHARSET_LFLAGS="$ICONV_LFLAGS"
+    AC_SUBST(CHARSET_CFLAGS)
+    AC_SUBST(CHARSET_LFLAGS)
+    AC_DEFINE(PLUGIN_CHARSET)
+else
+    not_asked="$not_asked charset"
+fi
+
+# ---------------------------------- fifo --------------------------------------
+
+if test "x$enable_fifo" = "xyes" ; then
+    FIFO_CFLAGS=""
+    FIFO_LFLAGS=""
+    AC_SUBST(FIFO_CFLAGS)
+    AC_SUBST(FIFO_LFLAGS)
+    AC_DEFINE(PLUGIN_FIFO)
+else
+    not_asked="$not_asked fifo"
+fi
+
+# ----------------------------------- irc --------------------------------------
+
+if test "x$enable_irc" = "xyes" ; then
+    AC_DEFINE(PLUGIN_IRC)
+else
+    not_asked="$not_asked irc"
+fi
+
+# --------------------------------- logger -------------------------------------
+
+if test "x$enable_logger" = "xyes" ; then
+    LOGGER_CFLAGS=""
+    LOGGER_LFLAGS=""
+    AC_SUBST(LOGGER_CFLAGS)
+    AC_SUBST(LOGGER_LFLAGS)
+    AC_DEFINE(PLUGIN_LOGGER)
+else
+    not_asked="$not_asked logger"
+fi
+
+# --------------------------------- relay --------------------------------------
+
+if test "x$enable_relay" = "xyes" ; then
+    RELAY_CFLAGS=""
+    RELAY_LFLAGS=""
+    AC_SUBST(RELAY_CFLAGS)
+    AC_SUBST(RELAY_LFLAGS)
+    AC_DEFINE(PLUGIN_RELAY)
+else
+    not_asked="$not_asked relay"
+fi
+
+# ------------------------------- rmodifier ------------------------------------
+
+if test "x$enable_rmodifier" = "xyes" ; then
+    AC_DEFINE(PLUGIN_RMODIFIER)
+else
+    not_asked="$not_asked rmodifier"
+fi
+
+# --------------------------------- script -------------------------------------
+
+if test "x$enable_script" = "xyes" ; then
+    AC_DEFINE(PLUGIN_SCRIPT)
+else
+    not_asked="$not_asked script"
+fi
+
+# ---------------------------------- perl --------------------------------------
+
+PERL_VERSION=
+
+if test "x$enable_perl" = "xyes" ; then
+    AC_PATH_PROGS(PERL, perl perl5)
+    if test -z $PERL ; then
+        AC_MSG_WARN([
+*** Perl must be installed on your system but perl interpreter couldn't be found in path.
+*** Please check that perl is in path, or install it with your software package manager.
+*** WeeChat will be built without Perl support.])
+        enable_perl="no"
+        not_found="$not_found perl"
+    else
+        PERL_VERSION=`perl -V:version | sed "s/version='\(.*\)';/\1/"`
+        AC_MSG_CHECKING(for Perl headers files)
+
+        PERL_HEADER_TEST=`PT=perltest.c ; echo "#include <EXTERN.h>" > $PT;  echo "#include <perl.h>" >> $PT;  echo "#include <XSUB.h>" >> $PT ;  echo "int main() { return 0; }" >> $PT ; $CC -Wall $PT -o $PT.out $($PERL -MExtUtils::Embed -e ccopts) 1>/dev/null 2>&1; echo $?; rm -f $PT $PT.out 1>/dev/null 2>&1`
+
+        if test "x$PERL_HEADER_TEST" = "x0" ; then
+            PERL_CFLAGS=`$PERL -MExtUtils::Embed -e ccopts`
+            AC_MSG_RESULT(found)
+            AC_MSG_CHECKING(for Perl library)
+            PERL_LIB_TEST=`PT=perltest.c ; echo "int main() { return 0; }" > $PT ; $CC -Wall $PT -o $PT.out $($PERL -MExtUtils::Embed -e ldopts) 1>/dev/null 2>&1; echo $?; rm -f $PT $PT.out 1>/dev/null 2>&1`
+            if test "x$PERL_LIB_TEST" = "x0" ; then
+                PERL_LFLAGS=`$PERL -MExtUtils::Embed -e ldopts`
+                AC_MSG_RESULT(found)
+            else
+                AC_MSG_WARN([
+*** Perl library couldn't be found on your system.
+*** Try to install it with your software package manager.
+*** WeeChat will be built without Perl support.])
+                enable_perl="no"
+                not_found="$not_found perl"
+            fi
+        else
+            AC_MSG_WARN([
+*** Perl headers couldn't be found on your system.
+*** Try to install it with your software package manager.
+*** WeeChat will be built without Perl support.])
+            enable_perl="no"
+            not_found="$not_found perl"
+        fi
+    fi
+else
+    not_asked="$not_asked perl"
+fi
+
+if test "x$enable_perl" = "xyes" ; then
+    AC_SUBST(PERL_CFLAGS)
+    AC_SUBST(PERL_LFLAGS)
+    AC_DEFINE(PLUGIN_PERL)
+fi
+
+# --------------------------------- python -------------------------------------
+
+PYTHON_VERSION=
+
+if test "x$enable_python" = "xyes" ; then
+    if test "x$enable_python3" = "xyes" ; then
+        AC_PATH_PROGS(PYTHON, python3.4 python3.3 python3.2 python3.1 python3.0 python3 python2.7 python2.6 python2.5 python2 python)
+    else
+        AC_PATH_PROGS(PYTHON, python2.7 python2.6 python2.5 python2 python)
+    fi
+    if test -z $PYTHON ; then
+        AC_MSG_WARN([
+*** Python must be installed on your system but python interpreter couldn't be found in path.
+*** Please check that python is in path, or install it with your software package manager.
+*** WeeChat will be built without Python support.])
+        enable_python="no"
+        not_found="$not_found python"
+    else
+        PYTHON_SYSPREFIX=`$PYTHON -c 'import sys; sys.stdout.write("%s" % sys.prefix)'`
+        PYTHON_VERSION=`$PYTHON -c 'import sys; sys.stdout.write(sys.version[[:3]])'`
+        PYTHON_INCLUDE=`$PYTHON -c "import sys, distutils.sysconfig, string; sys.stdout.write(distutils.sysconfig.get_config_var('INCLUDEPY'))"`
+        PYTHON_OLD_VERSION=`$PYTHON -c "import sys; sys.stdout.write(str(sys.version_info < (2,5)))"`
+        if test "x$PYTHON_OLD_VERSION" = "xTrue" ; then
+            AC_MSG_WARN([
+*** Python >= 2.5 is needed to build Python plugin, version found: $PYTHON_VERSION.
+*** WeeChat will be built without Python support.])
+            enable_python="no"
+            not_found="$not_found python"
+        else
+            AC_MSG_CHECKING(for Python header files)
+            if test -r "$PYTHON_INCLUDE/Python.h"; then
+                PYTHON_CFLAGS="-I$PYTHON_INCLUDE"
+                AC_MSG_RESULT(found)
+                PYTHON_LIB=`$PYTHON -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_config_var('LIBPL'))"`
+                PYTHON_LFLAGS="-lpython$PYTHON_VERSION "`$PYTHON -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_config_var('LIBS')+' '+distutils.sysconfig.get_config_var('SYSLIBS')+' '+distutils.sysconfig.get_config_var('LINKFORSHARED'))"`
+                AC_MSG_CHECKING(for Python library)
+                if test -r "$PYTHON_LIB/libpython$PYTHON_VERSION.so"; then
+                   PYTHON_LFLAGS="-L$PYTHON_LIB $PYTHON_LFLAGS"
+                   AC_MSG_RESULT(found)
+                elif test -r "$PYTHON_LIB/libpython$PYTHON_VERSION.a"; then
+                   PYTHON_LFLAGS="-L$PYTHON_LIB $PYTHON_LFLAGS"
+                   AC_MSG_RESULT(found)
+                elif test -r "$PYTHON_LIB/libpython$PYTHON_VERSION.dll.a"; then
+                   PYTHON_LFLAGS="-L$PYTHON_LIB $PYTHON_LFLAGS"
+                   AC_MSG_RESULT(found)
+                elif test -r "$PYTHON_SYSPREFIX/lib/libpython$PYTHON_VERSION.so"; then
+                   PYTHON_LFLAGS="-L$PYTHON_SYSPREFIX/lib/ $PYTHON_LFLAGS"
+                   AC_MSG_RESULT(found)
+                else
+                    AC_MSG_WARN([
+*** Python library couldn't be found on your system.
+*** Try to install it with your software package manager.
+*** WeeChat will be built without Python support.])
+                    enable_python="no"
+                    not_found="$not_found python"
+                fi
+            else
+                AC_MSG_WARN([
+*** Python header files couldn't be found on your system.
+*** Try to install them with your software package manager.
+*** WeeChat will be built without Python support.])
+                enable_python="no"
+                not_found="$not_found python"
+            fi
+        fi
+    fi
+else
+    not_asked="$not_asked python"
+fi
+
+if test "x$enable_python" = "xyes" ; then
+    AC_SUBST(PYTHON_CFLAGS)
+    AC_SUBST(PYTHON_LFLAGS)
+    AC_DEFINE(PLUGIN_PYTHON)
+fi
+
+# ---------------------------------- ruby --------------------------------------
+
+RUBY_VERSION=
+
+if test "x$enable_ruby" = "xyes" ; then
+    AC_PATH_PROGS(RUBY, ruby1.9.3 ruby1.9.2 ruby1.9.1 ruby1.9 ruby1.8 ruby)
+    if test -z $RUBY ; then
+        AC_MSG_WARN([
+*** Ruby must be installed on your system but ruby interpreter couldn't be found in path.
+*** Please check that ruby is in path, or install it with your software package manager.
+*** WeeChat will be built without Ruby support.])
+        enable_ruby="no"
+        not_found="$not_found ruby"
+    else
+        RUBY_VERSION=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['ruby_version']]"`
+        if test "$RUBY_VERSION" = "1.9.0"; then
+            AC_MSG_WARN([
+*** Ruby header files have been found, but they're of the version 1.9.0.
+*** Ruby 1.9.0 is an unstable release and should not be used in production.
+*** Please install Ruby 1.8.x (>= 1.8.6) or >= 1.9.1.
+*** WeeChat will be built without Ruby support.])
+            enable_ruby="no"
+            not_found="$not_found ruby"
+        else
+            RUBY_INCLUDE=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['rubyhdrdir']] || RbConfig::CONFIG[['archdir']]"`
+            RUBY_ARCH=`$RUBY -rrbconfig -e 'print RbConfig::CONFIG[["arch"]]'`
+            AC_MSG_CHECKING(for Ruby header files)
+            if test -d "$RUBY_INCLUDE/"; then
+                M_RUBY_VERSION=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['ruby_version']].gsub(/\./, '')[[0,3]]"`
+                RUBY_CFLAGS="-I$RUBY_INCLUDE/ -I$RUBY_INCLUDE/$RUBY_ARCH -DRUBY_VERSION=$M_RUBY_VERSION"
+            else
+                AC_MSG_WARN([
+*** Ruby header files couldn't be found on your system.
+*** Try to install them with your software package manager.
+*** WeeChat will be built without Ruby support.])
+                enable_ruby="no"
+                not_found="$not_found ruby"
+            fi
+            AC_MSG_RESULT(found)
+            RUBY_LFLAGS=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['LIBRUBYARG_SHARED']]"`
+        fi
+    fi
+else
+    not_asked="$not_asked ruby"
+fi
+
+if test "x$enable_ruby" = "xyes" ; then
+    AC_SUBST(RUBY_CFLAGS)
+    AC_SUBST(RUBY_LFLAGS)
+    AC_DEFINE(PLUGIN_RUBY)
+fi
+
+# ---------------------------------- lua --------------------------------------
+
+LUA_VERSION=
+
+if test "x$enable_lua" = "xyes" ; then
+    ac_save_CPPFLAGS="$CPPFLAGS"
+    ac_save_CFLAGS="$CFLAGS"
+    ac_save_LDFLAGS="$LDFLAGS"
+
+    LUA_CFLAGS=""
+    LUA_LFLAGS=""
+
+    if test -n "$lua_inc"; then
+       CFLAGS="$CFLAGS -I$lua_inc"
+       CPPFLAGS="$CPPFLAGS -I$lua_inc"
+    fi
+    if test -n "$lua_lib"; then
+       LDFLAGS="$LDFLAGS -L$lua_lib"
+    fi
+
+    if test "x$LUA_CFLAGS" = "x" -o "x$LUA_LFLAGS" = "x" ; then
+        PKGCONFIG=""
+        AC_CHECK_PROGS(PKGCONFIG, pkg-config)
+        if test "x$PKGCONFIG" != "x"; then
+            AC_MSG_CHECKING(for Lua headers and librairies with pkg-config)
+            echo
+            for l in "$lua_suffix" "" "51" "5.1" "50" "5.0" ; do
+                pkgconfig_lua_found=`$PKGCONFIG --exists lua$l 2>/dev/null`
+                if test "x$?" = "x0" ; then
+                    LUA_VERSION=`$PKGCONFIG --modversion lua$l`
+                    LUA_CFLAGS="$LUA_CFLAGS "`$PKGCONFIG --cflags lua$l`
+                    LUA_LFLAGS="$LUA_LFLAGS "`$PKGCONFIG --libs lua$l`
+
+                    pkgconfig_lualib_found=`$PKGCONFIG --exists lualib$l 2>/dev/null`
+                    if test  "x$?" = "x0"; then
+                        LUA_CFLAGS="$LUA_CFLAGS "`$PKGCONFIG --cflags lualib$l`
+                        LUA_LFLAGS="$LUA_LFLAGS "`$PKGCONFIG --libs lualib$l`
+                    fi
+                    break
+                fi
+            done
+        fi
+    fi
+
+    if test "x$LUA_CFLAGS" = "x" -o "x$LUA_LFLAGS" = "x" ; then
+        LUACONFIG=""
+        AC_CHECK_PROGS(LUACONFIG, lua-config lua-config51 lua-config5.1 lua-config50 lua-config5.0)
+        if test "x$LUACONFIG" != "x" ; then
+            AC_MSG_CHECKING(for Lua headers and librairies with lua-config)
+            echo
+            LUA_CFLAGS=`$LUACONFIG --include`
+            LUA_LFLAGS=`$LUACONFIG --libs`
+            LUA_VERSION="5.0.x"
+        fi
+    fi
+
+    if test "x$LUA_CFLAGS" = "x" -o "x$LUA_LFLAGS" = "x" ; then
+        AC_MSG_CHECKING(for Lua headers and librairies)
+        echo
+        AC_CHECK_HEADER(lua.h,ac_found_lua_header="yes",ac_found_lua_header="no")
+        AC_CHECK_HEADER(lualib.h,ac_found_liblua_header="yes",ac_found_liblua_header="no")
+        if test "x$ac_found_lua_header" = "xyes" -a "x$ac_found_liblua_header" = "xyes"; then
+            LUA_CFLAGS="$CFLAGS"
+        fi
+        for l in "$lua_suffix" "" "51" "5.1" "50" "5.0" ; do
+            AC_CHECK_LIB(lua$l,lua_call,ac_found_lua_lib="yes",ac_found_lua_lib="no")
+            if test "x$ac_found_lua_lib" = "xyes" ; then
+                LUA_VERSION=">=5.1.0"
+
+                LUA_LFLAGS="$LDFLAGS -llua$l -lm"
+
+                ac2_save_LDFLAGS="$LDFLAGS"
+                LDFLAGS="$LDFLAGS -llua$l -lm"
+
+                if echo "$host_os" | grep "^linux" 1>/dev/null 2>&1 ; then
+                    LDFLAGS="$LDFLAGS -ldl"
+                fi
+
+                AC_CHECK_LIB(lualib$l,luaL_openlib,ac_found_liblua_lib="yes",ac_found_liblua_lib="no")
+                if test "x$ac_found_liblua_lib" = "xyes" ; then
+                    LUA_VERSION="5.0.x"
+
+                    LUA_LFLAGS="$LUA_LFLAGS -llualib$l"
+
+                    if echo "$host_os" | grep "^linux" 1>/dev/null 2>&1 ; then
+                        LUA_LFLAGS="$LUA_LFLAGS -ldl"
+                    fi
+                fi
+
+                LDFLAGS="$ac2_save_LDFLAGS"
+                break
+            fi
+        done
+    fi
+
+    AC_MSG_CHECKING(for Lua compiling and linking)
+    LUA_TEST=`LT=luatest.c ; echo "#include <lua.h>" > $LT;  echo "#include <lualib.h>" >> $LT; echo "int main() { luaopen_base((lua_State *)lua_open()); return 0; }" >> $LT ; $CC -Wall $LT -o $LT.out $LUA_CFLAGS $LUA_LFLAGS $CFLAGS $LDFLAGS 1>/dev/null 2>&1 ; echo $?; rm -f $LT $LT.out 1>/dev/null 2>&1`
+    if test "x$LUA_TEST" != "x0" ; then
+        AC_MSG_RESULT(no)
+        AC_MSG_WARN([
+*** Lua (>=5.0) headers and/or librairies couldn't be found on your system.
+*** Try to install liblua, liblualib and liblua-dev with your software package manager.
+*** WeeChat will be built without Lua support.])
+        enable_lua="no"
+        not_found="$not_found lua"
+    else
+        AC_MSG_RESULT(yes)
+    fi
+
+    CFLAGS="$ac_save_CFLAGS"
+    CPPFLAGS="$ac_save_CPPFLAGS"
+    LDFLAGS="$ac_save_LDFLAGS"
+else
+    not_asked="$not_asked lua"
+fi
+
+if test "x$enable_lua" = "xyes" ; then
+    AC_SUBST(LUA_CFLAGS)
+    AC_SUBST(LUA_LFLAGS)
+    AC_DEFINE(PLUGIN_LUA)
+fi
+
+# --------------------------------- tcl -------------------------------------
+
+TCL_VERSION=
+
+if test "x$enable_tcl" = "xyes" ; then
+    enable_plugins="yes"
+
+    AC_MSG_CHECKING(for tclConfig.sh)
+    tcl_found="no"
+    tcl_dirs="/usr/lib/tcl8.5 /usr/lib64/tcl8.5 /lib /lib64 /usr/lib /usr/lib64 /usr/tcl/lib /usr/tcl/lib64 /usr/local/tcl-8.5/lib /usr/local/tcl-8.5/lib64 /usr/local/lib /usr/local/lib64 /usr/local/tcl/lib /usr/local/tcl/lib64 /opt/lib /opt/lib64"
+    if test "x$tclconfig" != "x" ; then
+      tcl_dirs="${tclconfig} ${tcl_dirs}"
+    fi
+    for tcl_dir in $tcl_dirs ; do
+        if test -f ${tcl_dir}/tclConfig.sh ; then
+            . ${tcl_dir}/tclConfig.sh
+            TCL_CFLAGS="-I${TCL_PREFIX}/include $TCL_INCLUDE_SPEC"
+            TCL_LFLAGS="$TCL_LIB_SPEC $TCL_LIBS"
+            tcl_found="yes"
+            AC_MSG_RESULT(${tcl_dir}/tclConfig.sh)
+            break
+        fi
+    done
+    if test "x$tcl_found" = "xno" ; then
+        AC_MSG_WARN([
+*** Script tclConfig.sh couldn't be found on your system.
+*** WeeChat will be built without Tcl support.])
+        enable_tcl="no"
+        not_found="$not_found tcl"
+    fi
+fi
+
+if test "x$enable_tcl" = "xyes" ; then
+    AC_SUBST(TCL_CFLAGS)
+    AC_SUBST(TCL_LFLAGS)
+    AC_DEFINE(PLUGIN_TCL)
+fi
+
+# --------------------------------- guile -------------------------------------
+
+GUILE_VERSION=
+
+if test "x$enable_guile" = "xyes" ; then
+    enable_plugins="yes"
+
+    guile_found="no"
+    PKGCONFIG=""
+    AC_CHECK_PROGS(PKGCONFIG, pkg-config)
+    if test "x$PKGCONFIG" != "x"; then
+        AC_MSG_CHECKING(for Guile headers and librairies)
+        echo
+        for v in "2.0" ; do
+            pkgconfig_guile_found=`$PKGCONFIG --exists guile-$v 2>/dev/null`
+            if test "x$?" = "x0" ; then
+                GUILE_VERSION=`$PKGCONFIG --modversion guile-$v`
+                GUILE_CFLAGS=`$PKGCONFIG --cflags guile-$v`
+                GUILE_LFLAGS=`$PKGCONFIG --libs guile-$v`
+                guile_found="yes"
+                break
+            fi
+        done
+    fi
+
+    if test "x$guile_found" = "xno" ; then
+        AC_MSG_WARN([
+*** Guile >= 2.0 couldn't be found on your system.
+*** WeeChat will be built without Guile (scheme) support.])
+        enable_guile="no"
+        not_found="$not_found guile"
+    fi
+fi
+
+if test "x$enable_guile" = "xyes" ; then
+    AC_SUBST(GUILE_CFLAGS)
+    AC_SUBST(GUILE_LFLAGS)
+    AC_DEFINE(PLUGIN_GUILE)
+fi
+
+# ---------------------------------- xfer --------------------------------------
+
+if test "x$enable_xfer" = "xyes" ; then
+    XFER_CFLAGS=""
+    XFER_LFLAGS=""
+    AC_SUBST(XFER_CFLAGS)
+    AC_SUBST(XFER_LFLAGS)
+    AC_DEFINE(PLUGIN_XFER)
+else
+    not_asked="$not_asked xfer"
+fi
+
+# ------------------------------------------------------------------------------
+#                                   gcrypt
+# ------------------------------------------------------------------------------
+
+AC_CHECK_HEADER(gcrypt.h,ac_found_gcrypt_header="yes",ac_found_gcrypt_header="no")
+AC_CHECK_LIB(gcrypt,gcry_check_version,ac_found_gcrypt_lib="yes",ac_found_gcrypt_lib="no")
+
+AC_MSG_CHECKING(for gcrypt headers and librairies)
+if test "x$ac_found_gcrypt_header" = "xno" -o "x$ac_found_gcrypt_lib" = "xno" ; then
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([
+*** libgcrypt was not found. You may want to get it from ftp://ftp.gnupg.org/gcrypt/libgcrypt/
+*** or try to install libgcrypt-dev with your software package manager.])
+else
+    AC_MSG_RESULT(yes)
+    GCRYPT_CFLAGS=`libgcrypt-config --cflags`
+    GCRYPT_LFLAGS=`libgcrypt-config --libs`
+    AC_SUBST(GCRYPT_CFLAGS)
+    AC_SUBST(GCRYPT_LFLAGS)
+fi
+
+# ------------------------------------------------------------------------------
+#                                   gnutls
+# ------------------------------------------------------------------------------
+
+if test "x$enable_gnutls" = "xyes" ; then
+    AC_CHECK_HEADER(gnutls/gnutls.h,ac_found_gnutls_header="yes",ac_found_gnutls_header="no")
+    AC_CHECK_LIB(gnutls,gnutls_global_init,ac_found_gnutls_lib="yes",ac_found_gnutls_lib="no")
+
+    AC_MSG_CHECKING(for gnutls headers and librairies)
+    if test "x$ac_found_gnutls_header" = "xno" -o "x$ac_found_gnutls_lib" = "xno" ; then
+        AC_MSG_RESULT(no)
+        AC_MSG_WARN([
+*** libgnutls was not found. You may want to get it from ftp://ftp.gnutls.org/pub/gnutls/
+*** WeeChat will be built without GnuTLS support.])
+        enable_gnutls="no"
+        not_found="$not_found gnutls"
+    else
+        AC_MSG_RESULT(yes)
+        GNUTLS_CFLAGS=`pkg-config gnutls --cflags`
+        GNUTLS_LFLAGS=`pkg-config gnutls --libs`
+        AC_SUBST(GNUTLS_CFLAGS)
+        AC_SUBST(GNUTLS_LFLAGS)
+        AC_DEFINE(HAVE_GNUTLS)
+        CFLAGS="$CFLAGS -DHAVE_GNUTLS"
+    fi
+else
+    not_asked="$not_asked gnutls"
+fi
+
+# ------------------------------------------------------------------------------
+#                                   flock
+# ------------------------------------------------------------------------------
+
+enable_flock="no"
+AC_CACHE_CHECK([for flock() support], ac_cv_have_flock, [
+AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[ #include <sys/file.h>]],
+[[ flock(0, LOCK_SH); ]])],
+[ ac_have_flock="yes" ],
+[ ac_have_flock="no" ])])
+
+if test "x$ac_have_flock" = "xyes"; then
+    enable_flock="yes"
+    AC_DEFINE(HAVE_FLOCK)
+else
+    not_found="$not_found flock"
+fi
+
+# ------------------------------------------------------------------------------
+#                               large file support
+# ------------------------------------------------------------------------------
+if test "x$enable_largefile" = "xyes" ; then
+   CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -D_LARGE_FILES"
+else
+   not_asked="$not_asked largefile"
+fi
+
+# ------------------------------------------------------------------------------
+#                                  backtrace
+# ------------------------------------------------------------------------------
+
+enable_backtrace="no"
+if test "x$debug" != "x0" ; then
+    AC_CACHE_CHECK([for execinfo.h and backtrace], ac_cv_have_backtrace, [
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [[ #include <execinfo.h> ]],
+            [[ void *trace[128]; int n = backtrace(trace, 128); ]])],
+            [ ac_have_backtrace="yes" ],
+            [ ac_have_backtrace="no"  ])])
+    if test "x$ac_have_backtrace" = "xyes"; then
+        enable_backtrace="yes"
+        AC_DEFINE(HAVE_BACKTRACE,1,[glibc backtrace function])
+    else
+        not_found="$not_found backtrace"
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+#                             eat_newline_glitch
+# ------------------------------------------------------------------------------
+
+enable_eatnewlineglitch="no"
+AC_CACHE_CHECK([for eat_newline_glitch support], ac_cv_have_eatnewlineglitch, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+[[ #include <term.h> ]],
+[[ eat_newline_glitch = 0; ]])],
+[ ac_have_eatnewlineglitch="yes" ],
+[ ac_have_eatnewlineglitch="no" ])])
+
+if test "x$ac_have_eatnewlineglitch" = "xyes"; then
+    enable_eatnewlineglitch="yes"
+    AC_DEFINE(HAVE_EAT_NEWLINE_GLITCH)
+else
+    not_found="$not_found eat_newline_glitch"
+fi
+
+# ------------------------------------------------------------------------------
+#                                     zlib
+# ------------------------------------------------------------------------------
+
+AC_CHECK_HEADER(zlib.h,ac_found_zlib_header="yes",ac_found_zlib_header="no")
+AC_CHECK_LIB(z,compress2,ac_found_zlib_lib="yes",ac_found_zlib_lib="no")
+
+AC_MSG_CHECKING(for zlib headers and librairies)
+if test "x$ac_found_zlib_header" = "xno" -o "x$ac_found_zlib_lib" = "xno" ; then
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([
+*** zlib was not found. You may want to get it from http://zlib.net/
+*** or try to install libcurl-dev with your software package manager.])
+else
+    AC_MSG_RESULT(yes)
+    ZLIB_CFLAGS=`pkg-config zlib --cflags`
+    ZLIB_LFLAGS=`pkg-config zlib --libs`
+    AC_SUBST(ZLIB_CFLAGS)
+    AC_SUBST(ZLIB_LFLAGS)
+fi
+
+# ------------------------------------------------------------------------------
+#                                     curl
+# ------------------------------------------------------------------------------
+
+AC_PATH_PROG(CURL_CONFIG, curl-config)
+if test "x$CURL_CONFIG" = "x" ; then
+    AC_MSG_ERROR([
+*** "curl-config" couldn't be found on your system.
+*** Try to install libcurl-dev with your software package manager.])
+fi
+CURL_CFLAGS=`$CURL_CONFIG --cflags`
+CURL_LFLAGS=`$CURL_CONFIG --libs`
+AC_SUBST(CURL_CFLAGS)
+AC_SUBST(CURL_LFLAGS)
+
+# ------------------------------------------------------------------------------
+#                           man page / documentation
+# ------------------------------------------------------------------------------
+
+msg_man=""
+msg_doc=""
+
+if test "x$enable_man" = "xno"; then
+    not_asked="$not_asked man"
+fi
+if test "x$enable_doc" = "xno"; then
+    not_asked="$not_asked doc"
+fi
+
+if test "x$enable_man" = "xyes" -o "x$enable_doc" = "xyes"; then
+    DOC_ASCIIDOC8=""
+    AC_CHECK_PROGS(ASCIIDOC, [asciidoc])
+    AC_CHECK_PROGS(A2X, [a2x])
+    AC_CHECK_PROGS(SOURCEHIGHLIGHT, [source-highlight])
+    if test -z "$A2X"; then
+        not_found="$not_found a2x(from asciidoc)"
+    fi
+    if test -z "$SOURCEHIGHLIGHT"; then
+        not_found="$not_found source-highlight(needed by asciidoc)"
+    fi
+    if test -n "$ASCIIDOC"; then
+        AC_MSG_CHECKING([for asciidoc version])
+        asciidoc_version=`$ASCIIDOC --version 2>/dev/null`
+        case "${asciidoc_version}" in
+        asciidoc' '8*)
+                DOC_ASCIIDOC8="yes"
+                AC_MSG_RESULT([${asciidoc_version}])
+                if test "x$enable_man" = "xyes"; then
+                    if test -n "$A2X"; then
+                        msg_man="asciidoc(with a2x) $msg_man"
+                        AC_DEFINE(MAN)
+                    else
+                        enable_man="no"
+                    fi
+                fi
+                if test "x$enable_doc" = "xyes"; then
+                    if test -n "$SOURCEHIGHLIGHT"; then
+                        msg_doc="asciidoc(with source-highlight) $msg_doc"
+                        AC_DEFINE(DOC)
+                    else
+                        enable_doc="no"
+                    fi
+                fi
+                ;;
+        *)
+                AC_MSG_RESULT([${asciidoc_version} (too old)])
+                not_found="$not_found asciidoc"
+                enable_man="no"
+                enable_doc="no"
+                ;;
+        esac
+    else
+        not_found="$not_found asciidoc"
+        enable_man="no"
+        enable_doc="no"
+    fi
+    AC_SUBST(ASCIIDOC)
+    AC_SUBST(A2X)
+fi
+
+# ------------------------------------------------------------------------------
+#                                general vars
+# ------------------------------------------------------------------------------
+
+if test "x$prefix" = "xNONE" ; then
+    prefix="$ac_default_prefix"
+fi
+
+if test "x$exec_prefix" = "xNONE" ; then
+    exec_prefix="$prefix"
+fi
+
+AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
+
+WEECHAT_LIBDIR=`eval eval echo ${libdir}/weechat`
+AC_DEFINE_UNQUOTED(WEECHAT_LIBDIR, "$WEECHAT_LIBDIR")
+
+WEECHAT_SHAREDIR=`eval eval echo ${datadir}/weechat`
+AC_DEFINE_UNQUOTED(WEECHAT_SHAREDIR, "$WEECHAT_SHAREDIR")
+
+weechat_libdir=${libdir}/weechat
+AC_SUBST(weechat_libdir)
+
+COMMON_CFLAGS="-Wall -W -Werror-implicit-function-declaration"
+AC_MSG_CHECKING([whether we have GNU assembler])
+GAS=`as --version < /dev/null 2>/dev/null | grep GNU`
+if test "$GAS"; then
+    COMMON_CFLAGS="${COMMON_CFLAGS} -pipe"
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
+
+CFLAGS=`echo $CFLAGS | sed 's/ -g / /g'`
+CFLAGS=`echo $CFLAGS | sed 's/^-g //g'`
+CFLAGS=`echo $CFLAGS | sed 's/ -g$//g'`
+CFLAGS=`echo $CFLAGS | sed 's/^-g$//g'`
+if test "x$debug" = "x0" ; then
+    CFLAGS="$COMMON_CFLAGS $CFLAGS"
+else
+    CFLAGS="$COMMON_CFLAGS $CFLAGS -g -O0"
+fi
+
+LIBS="$LIBS $INTLLIBS"
+
+case "$host_os" in
+freebsd*)
+        if test "x$enable_perl" = "xyes" -o "x$enable_python" = "xyes" ; then
+            CFLAGS="$CFLAGS -pthread"
+        fi
+        CFLAGS="$CFLAGS $CPPFLAGS"
+        ;;
+openbsd*)
+        if test "x$enable_python" = "xyes" ; then
+            CFLAGS="$CFLAGS -pthread"
+        fi
+        ;;
+netbsd*)
+        if test "x$enable_perl" = "xyes" -o "x$enable_python" = "xyes" ; then
+            CFLAGS="$CFLAGS -pthread"
+        fi
+        CFLAGS="$CFLAGS $CPPFLAGS"
+        ;;
+gnu*)
+        LDFLAGS="$LDFLAGS -lpthread"
+        ;;
+*)
+        ;;
+esac
+
+CFLAGS="$CFLAGS -DWEECHAT_VERSION=\\\"$VERSION\\\" -DWEECHAT_LICENSE=\\\"$LICENSE\\\""
+
+# ------------------------------------------------------------------------------
+#                                output Makefiles
+# ------------------------------------------------------------------------------
+
+AM_CONDITIONAL(HAVE_GNUTLS,             test "$enable_gnutls" = "yes")
+AM_CONDITIONAL(HAVE_FLOCK,              test "$enable_flock" = "yes")
+AM_CONDITIONAL(HAVE_EAT_NEWLINE_GLITCH, test "$enable_eatnewlineglitch" = "yes")
+AM_CONDITIONAL(GUI_NCURSES,             test "$enable_ncurses" = "yes")
+AM_CONDITIONAL(PLUGIN_ALIAS,            test "$enable_alias" = "yes")
+AM_CONDITIONAL(PLUGIN_ASPELL,           test "$enable_aspell" = "yes")
+AM_CONDITIONAL(PLUGIN_CHARSET,          test "$enable_charset" = "yes")
+AM_CONDITIONAL(PLUGIN_FIFO,             test "$enable_fifo" = "yes")
+AM_CONDITIONAL(PLUGIN_IRC,              test "$enable_irc" = "yes")
+AM_CONDITIONAL(PLUGIN_LOGGER,           test "$enable_logger" = "yes")
+AM_CONDITIONAL(PLUGIN_RELAY,            test "$enable_relay" = "yes")
+AM_CONDITIONAL(PLUGIN_RMODIFIER,        test "$enable_rmodifier" = "yes")
+AM_CONDITIONAL(PLUGIN_SCRIPT,           test "$enable_script" = "yes")
+AM_CONDITIONAL(PLUGIN_PERL,             test "$enable_perl" = "yes")
+AM_CONDITIONAL(PLUGIN_PYTHON,           test "$enable_python" = "yes")
+AM_CONDITIONAL(PLUGIN_RUBY,             test "$enable_ruby" = "yes")
+AM_CONDITIONAL(PLUGIN_LUA,              test "$enable_lua" = "yes")
+AM_CONDITIONAL(PLUGIN_TCL,              test "$enable_tcl" = "yes")
+AM_CONDITIONAL(PLUGIN_GUILE,            test "$enable_guile" = "yes")
+AM_CONDITIONAL(PLUGIN_XFER,             test "$enable_xfer" = "yes")
+AM_CONDITIONAL(MAN,                     test "$enable_man" = "yes")
+AM_CONDITIONAL(DOC,                     test "$enable_doc" = "yes")
+
+AC_OUTPUT([Makefile
+           doc/Makefile
+           doc/en/Makefile
+           doc/fr/Makefile
+           doc/it/Makefile
+           doc/de/Makefile
+           doc/pl/Makefile
+           doc/es/Makefile
+           doc/ru/Makefile
+           doc/ja/Makefile
+           src/Makefile
+           src/core/Makefile
+           src/plugins/Makefile
+           src/plugins/alias/Makefile
+           src/plugins/aspell/Makefile
+           src/plugins/charset/Makefile
+           src/plugins/fifo/Makefile
+           src/plugins/irc/Makefile
+           src/plugins/logger/Makefile
+           src/plugins/relay/Makefile
+           src/plugins/rmodifier/Makefile
+           src/plugins/script/Makefile
+           src/plugins/perl/Makefile
+           src/plugins/python/Makefile
+           src/plugins/ruby/Makefile
+           src/plugins/lua/Makefile
+           src/plugins/tcl/Makefile
+           src/plugins/guile/Makefile
+           src/plugins/xfer/Makefile
+           src/gui/Makefile
+           src/gui/curses/Makefile
+           intl/Makefile
+           po/Makefile.in])
+
+# ------------------------------------------------------------------------------
+#                                  end message
+# ------------------------------------------------------------------------------
+
+listgui=""
+if test "x$enable_ncurses" = "xyes" ; then
+    listgui="$listgui ncurses"
+fi
+
+if test "x$listgui" = "x" ; then
+    AC_MSG_ERROR([
+*** No interface specified...
+*** Please enable at least ncurses.])
+fi
+
+listplugins=""
+if test "x$enable_alias" = "xyes"; then
+    listplugins="$listplugins alias"
+fi
+if test "x$enable_aspell" = "xyes"; then
+    listplugins="$listplugins aspell($ASPELL_LIB_USED)"
+fi
+if test "x$enable_charset" = "xyes"; then
+    listplugins="$listplugins charset"
+fi
+if test "x$enable_fifo" = "xyes"; then
+    listplugins="$listplugins fifo"
+fi
+if test "x$enable_irc" = "xyes" ; then
+    listplugins="$listplugins irc"
+fi
+if test "x$enable_logger" = "xyes"; then
+    listplugins="$listplugins logger"
+fi
+if test "x$enable_relay" = "xyes"; then
+    listplugins="$listplugins relay"
+fi
+if test "x$enable_rmodifier" = "xyes"; then
+    listplugins="$listplugins rmodifier"
+fi
+if test "x$enable_script" = "xyes"; then
+    listplugins="$listplugins script"
+fi
+if test "x$enable_perl" = "xyes"; then
+    listplugins="$listplugins perl($PERL_VERSION)"
+fi
+if test "x$enable_python" = "xyes"; then
+    listplugins="$listplugins python($PYTHON_VERSION)"
+fi
+if test "x$enable_ruby" = "xyes"; then
+    listplugins="$listplugins ruby($RUBY_VERSION)"
+fi
+if test "x$enable_lua" = "xyes"; then
+    listplugins="$listplugins lua($LUA_VERSION)"
+fi
+if test "x$enable_tcl" = "xyes"; then
+    listplugins="$listplugins tcl($TCL_VERSION)"
+fi
+if test "x$enable_guile" = "xyes"; then
+    listplugins="$listplugins guile($GUILE_VERSION)"
+fi
+if test "x$enable_xfer" = "xyes"; then
+    listplugins="$listplugins xfer"
+fi
+
+listoptional=""
+if test "x$enable_gnutls" = "xyes"; then
+    listoptional="$listoptional gnutls"
+fi
+if test "x$enable_flock" = "xyes"; then
+    listoptional="$listoptional flock"
+fi
+if test "x$enable_largefile" = "xyes"; then
+    listoptional="$listoptional largefile"
+fi
+if test "x$enable_backtrace" = "xyes"; then
+    listoptional="$listoptional backtrace"
+fi
+
+msg_debug="no"
+if test "x$debug" != "x0"; then
+    msg_debug="yes"
+fi
+
+if test "x$msg_man" = "x"; then
+    msg_man="no"
+else
+    msg_man="yes: $msg_man"
+fi
+if test "x$msg_doc" = "x"; then
+    msg_doc="no"
+else
+    msg_doc="yes: $msg_doc"
+fi
+
+echo ""
+echo "Enabled features:"
+echo "   Interfaces............. :$listgui"
+echo "   Plugins................ :$listplugins"
+echo "   Optional features...... :$listoptional"
+echo "   Compile with debug..... : $msg_debug"
+echo "   Man page............... : $msg_man"
+echo "   Documentation.......... : $msg_doc"
+echo "   Certificate authorities : ${CA_FILE}"
+
+if test "x$not_asked" != "x" || test "x$not_found" != "x"; then
+    echo ""
+    echo "Disabled features:"
+    if test "x$not_asked" != "x"; then
+        echo "   - not asked:$not_asked"
+    fi
+    if test "x$not_found" != "x"; then
+        echo "   - not found:$not_found"
+    fi
+fi
+
+echo ""
+echo "WeeChat home directory is ${WEECHAT_HOME}"
+echo ""
+eval echo "WeeChat will be installed in $bindir"
+echo ""
+echo "configure complete, now type 'make' to build WeeChat $VERSION"
+echo ""

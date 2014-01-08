@@ -1,0 +1,99 @@
+/*
+ * Copyright (C) 2003-2013 Sebastien Helleu <flashcode@flashtux.org>
+ *
+ * This file is part of WeeChat, the extensible chat client.
+ *
+ * WeeChat is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * WeeChat is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with WeeChat.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef __WEECHAT_IRC_COLOR_H
+#define __WEECHAT_IRC_COLOR_H 1
+
+#define IRC_NUM_COLORS        16
+
+/*
+ * shift ncurses colors for compatibility with colors
+ * in IRC messages (same as other IRC clients)
+ */
+
+#define WEECHAT_COLOR_BLACK   COLOR_BLACK
+#define WEECHAT_COLOR_RED     COLOR_BLUE
+#define WEECHAT_COLOR_GREEN   COLOR_GREEN
+#define WEECHAT_COLOR_YELLOW  COLOR_CYAN
+#define WEECHAT_COLOR_BLUE    COLOR_RED
+#define WEECHAT_COLOR_MAGENTA COLOR_MAGENTA
+#define WEECHAT_COLOR_CYAN    COLOR_YELLOW
+#define WEECHAT_COLOR_WHITE   COLOR_WHITE
+
+/* attributes in IRC messages for color & style (bold, ..) */
+
+#define IRC_COLOR_BOLD_CHAR       '\x02'
+#define IRC_COLOR_BOLD_STR        "\x02"
+#define IRC_COLOR_COLOR_CHAR      '\x03'
+#define IRC_COLOR_COLOR_STR       "\x03"
+#define IRC_COLOR_RESET_CHAR      '\x0F'
+#define IRC_COLOR_RESET_STR       "\x0F"
+#define IRC_COLOR_FIXED_CHAR      '\x11'
+#define IRC_COLOR_FIXED_STR       "\x11"
+#define IRC_COLOR_REVERSE_CHAR    '\x12'
+#define IRC_COLOR_REVERSE_STR     "\x12"
+#define IRC_COLOR_REVERSE2_CHAR   '\x16'
+#define IRC_COLOR_REVERSE2_STR    "\x16"
+#define IRC_COLOR_ITALIC_CHAR     '\x1D'
+#define IRC_COLOR_ITALIC_STR      "\x1D"
+#define IRC_COLOR_UNDERLINE_CHAR  '\x1F'
+#define IRC_COLOR_UNDERLINE_STR   "\x1F"
+
+/* macros for WeeChat core and IRC colors */
+
+#define IRC_COLOR_BAR_FG weechat_color("bar_fg")
+#define IRC_COLOR_BAR_BG weechat_color("bar_bg")
+#define IRC_COLOR_BAR_DELIM weechat_color("bar_delim")
+#define IRC_COLOR_RESET weechat_color("reset")
+#define IRC_COLOR_CHAT_CHANNEL weechat_color("chat_channel")
+#define IRC_COLOR_CHAT_DELIMITERS weechat_color("chat_delimiters")
+#define IRC_COLOR_CHAT_HOST weechat_color("chat_host")
+#define IRC_COLOR_CHAT_NICK weechat_color("chat_nick")
+#define IRC_COLOR_CHAT_NICK_SELF weechat_color("chat_nick_self")
+#define IRC_COLOR_CHAT_NICK_OTHER weechat_color("chat_nick_other")
+#define IRC_COLOR_CHAT_SERVER weechat_color("chat_server")
+#define IRC_COLOR_CHAT_VALUE weechat_color("chat_value")
+#define IRC_COLOR_NICK_PREFIX_OP weechat_color(weechat_config_string(irc_config_color_nick_prefix_op))
+#define IRC_COLOR_NICK_PREFIX_HALFOP weechat_color(weechat_config_string(irc_config_color_nick_prefix_halfop))
+#define IRC_COLOR_NICK_PREFIX_VOICE weechat_color(weechat_config_string(irc_config_color_nick_prefix_voice))
+#define IRC_COLOR_NICK_PREFIX_USER weechat_color(weechat_config_string(irc_config_color_nick_prefix_user))
+#define IRC_COLOR_NOTICE weechat_color(weechat_config_string(irc_config_color_notice))
+#define IRC_COLOR_STATUS_NUMBER weechat_color("status_number")
+#define IRC_COLOR_STATUS_NAME weechat_color("status_name")
+#define IRC_COLOR_STATUS_NAME_SSL weechat_color("status_name_ssl")
+#define IRC_COLOR_MESSAGE_JOIN weechat_color(weechat_config_string(irc_config_color_message_join))
+#define IRC_COLOR_MESSAGE_QUIT weechat_color(weechat_config_string(irc_config_color_message_quit))
+#define IRC_COLOR_REASON_QUIT weechat_color(weechat_config_string(irc_config_color_reason_quit))
+#define IRC_COLOR_TOPIC_OLD weechat_color(weechat_config_string(irc_config_color_topic_old))
+#define IRC_COLOR_TOPIC_NEW weechat_color(weechat_config_string(irc_config_color_topic_new))
+#define IRC_COLOR_INPUT_NICK weechat_color(weechat_config_string(irc_config_color_input_nick))
+#define IRC_COLOR_ITEM_AWAY weechat_color(weechat_config_string(irc_config_color_item_away))
+#define IRC_COLOR_ITEM_CHANNEL_MODES weechat_color(weechat_config_string(irc_config_color_item_channel_modes))
+#define IRC_COLOR_ITEM_LAG_COUNTING weechat_color(weechat_config_string(irc_config_color_item_lag_counting))
+#define IRC_COLOR_ITEM_LAG_FINISHED weechat_color(weechat_config_string(irc_config_color_item_lag_finished))
+
+extern char *irc_color_decode (const char *string, int keep_colors);
+extern char *irc_color_decode_for_user_entry (const char *string);
+extern char *irc_color_encode (const char *string, int keep_colors);
+extern char *irc_color_modifier_cb (void *data, const char *modifier,
+                                    const char *modifier_data,
+                                    const char *string);
+extern char *irc_color_for_tags (const char *color);
+
+#endif /* __WEECHAT_IRC_COLOR_H */
