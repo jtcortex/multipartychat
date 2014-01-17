@@ -33,8 +33,6 @@ WEECHAT_PLUGIN_LICENSE(MPOTR_PLUGIN_LICENSE);
 
 struct t_weechat_plugin *weechat_plugin = NULL;
 
-printf("Test");
-
 int
 xfer_add_cb (void *data, const char *signal, const char *type_data,
              void *signal_data)
