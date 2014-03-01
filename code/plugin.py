@@ -19,38 +19,42 @@ import xchat,sys,re
 import M2Crypto
 
 # Ammend system path to include mpOTR library
-sys.path.append("/home/sojiro/Documents/Project/Mpotr")
+sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
 import mpotr
+from transition import *
 
 ## Some global variables for the script
 SENDER = ""
 INVITE = 0
 acceptlist = []
 userlist = []
+m = MPOTRConnection()
 
-def broadcast(users, p2p):
+def broadcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
 	for x in users:
 		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
-			xchat.command("msg " + x.nick + " " + "?mpOTR?")
+			xchat.command("msg " + x.nick + " " + msg)
 	return xchat.EAT_ALL
 		
 
 def mpotr_cb(word, word_eol, userdata):
 	''' Callback for /mpotr command '''
+	global m
 	if len(word) < 2:
 		print "Second arg must be the action!"
 		print "\nAvailable actions:"
 		print "     auth - initiate mpOTR session and authenticate participants"
 	elif word[1] == "auth":
+		m.SetUsers(xchat.get_list("users"))
 		setup()
 		if '-p2p' in word_eol:
 			broadcast(xchat.get_list("users"), 1)
 		else:
-			broadcast(xchat.get_list("users"), 0)
+			synchronize()
 	elif word[1] == "y":
-		print "SENDER", SENDER
-		xchat.command("msg " + SENDER + " " + "!mpOTR!")
+		m.SetUsers(xchat.get_list("users"))
+		acknowledge()
 	else:
 		xchat.prnt("Unknown action")
 	return xchat.EAT_ALL
@@ -59,10 +63,22 @@ def say_cb(word, word_eol, userdata):
 	''' Word Interception'''
 	return xchat.EAT_ALL
 
+def synchronize():
+	msg = "?mpOTR?"
+	broadcast(xchat.get_list("users"), 0, msg)
+
+def acknowledge():
+	xchat.command("msg " + SENDER + " !mpOTR!")
+
+def synchronizeAcknowledge():
+	msg = "!mpOTR_Init!"
+	broadcast(xchat.get_list("users"), 0, msg)
+
 def msg_cb(word, word_eol, userdata):
 	global SENDER
 	global INVITE
 	global acceptlist
+	global m
 	if ":?mpOTR?" in word:
 		sender = re.search('(?<=:)\w+', word[0])
 		SENDER = sender.group(0)
@@ -75,8 +91,34 @@ def msg_cb(word, word_eol, userdata):
 			if SENDER == user[0].nick:
 				user[1] = 1
 		if allAccept() == 1:
-			mpotr.Initiate(userlist)
+			synchronizeAcknowledge()
+			m.Start()
+	if ":!mpOTR_Init!" in word:
+		setup()
+		sender = re.search('(?<=:)\w+', word[0])
+		SENDER = sender.group(0)
+		m.Start()
+	elif ":!c_" in word[3]:
+		sender = re.search('(?<=:)\w+', word[0])
+		name = sender.group(0)
+		rand_num = re.search('[0-9]+', word[3])
+		randn = rand_num.group(0)
+		m.usermap.update({name:randn})
+		print m.usermap
+		if Receive_Participants(m) == 1:
+			m.SetState("ContInitiate")
 	return xchat.EAT_ALL
+
+def Receive_Participants(connection):
+	i = 0
+	for x in userlist:
+		if x.nick in connection.usermap:
+			print x.nick
+			i = i + 1
+	if i == len(userlist):
+		return 1
+	else:
+		return 0
 
 def setup():
 
