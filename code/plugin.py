@@ -107,7 +107,26 @@ def msg_cb(word, word_eol, userdata):
 		print m.usermap
 		if Receive_Participants(m) == 1:
 			m.SetState("ContInitiate")
+	elif ":\xc3\x93\x1d\x1a" in word[3]:
+		sender = re.search('(?<=:)\w+', word[0])
+		name = sender.group(0)
+		key = word[3].replace(":\xc3\x93\x1d\x1a", "")
+		m.keytable.update({name:key})
+		print m.keytable
+		if Receive_Participants_Key(m) == 1:
+			m.SetState("DSKE")
 	return xchat.EAT_ALL
+
+def Receive_Participants_Key(connection):
+	i = 0
+	for x in userlist:
+		if x.nick in connection.keytable:
+			print x.nick
+			i = i+1
+	if i == len(userlist):
+		return 1
+	else:
+		return 0
 
 def Receive_Participants(connection):
 	i = 0
@@ -121,7 +140,6 @@ def Receive_Participants(connection):
 		return 0
 
 def setup():
-
 	global acceptlist
 	global userlist
 	acceptlist = []
@@ -144,6 +162,21 @@ def allAccept():
 		return 1
 	else:
 		return 0
+
+def printBanner():
+	
+	print "*****************************************************************"
+	print "*      *         *        * * * *  * * * *  * * * * *  * * * *  *"
+	print "*     * *       *  *      *     *  *     *      *      *     *  *"
+	print "*    *   *     *    *     * * * *  *     *      *      * * * *  *"
+	print "*   *     *   *      *    *        *     *      *      * *      *"
+	print "*  *       * *        *   *        *     *      *      *   *    *"
+	print "* *         *          *  *        * * * *      *      *     *  *"
+	print "*****************************************************************"
+	print "*    Multi-Party Off-the-record Messaging plugin for X-Chat     *"
+	print "*****************************************************************"
+	print "-> This conversation has been taken off the record"
+	print "-> Say Hi!"
 
 xchat.hook_print("Your Message", say_cb)
 xchat.hook_print("Message send", say_cb)
