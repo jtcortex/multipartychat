@@ -93,18 +93,17 @@ def msg_cb(word, word_eol, userdata):
 		if allAccept() == 1:
 			synchronizeAcknowledge()
 			m.Start()
-	if ":!mpOTR_Init!" in word:
+	elif ":!mpOTR_Init!" in word:
 		setup()
 		sender = re.search('(?<=:)\w+', word[0])
 		SENDER = sender.group(0)
 		m.Start()
-	elif ":!c_" in word[3]:
+	if ":!c_" in word[3]:
 		sender = re.search('(?<=:)\w+', word[0])
 		name = sender.group(0)
 		rand_num = re.search('[0-9]+', word[3])
 		randn = rand_num.group(0)
 		m.usermap.update({name:randn})
-		print m.usermap
 		if Receive_Participants(m) == 1:
 			m.SetState("ContInitiate")
 	elif ":\xc3\x93\x1d\x1a" in word[3]:
@@ -112,16 +111,31 @@ def msg_cb(word, word_eol, userdata):
 		name = sender.group(0)
 		key = word[3].replace(":\xc3\x93\x1d\x1a", "")
 		m.keytable.update({name:key})
-		print m.keytable
 		if Receive_Participants_Key(m) == 1:
 			m.SetState("DSKE")
-	return xchat.EAT_ALL
+	elif ":30783132" in word[3]:
+		sender = re.search('(?<=:)\w+', word[0])
+		name = sender.group(0)
+		hashval = word[3].replace(":30783132", "")
+		m.associationtable.update({name:hashval})
+		if Receive_Hashes(m) == 1:
+			m.SetState("Verify")
+	return xchat.EAT_XCHAT
+
+def Receive_Hashes(connection):
+	i = 0
+	for x in userlist:
+		if x.nick in connection.associationtable:
+			i = i+1
+	if i == len(userlist):
+		return 1
+	else:
+		return 0
 
 def Receive_Participants_Key(connection):
 	i = 0
 	for x in userlist:
 		if x.nick in connection.keytable:
-			print x.nick
 			i = i+1
 	if i == len(userlist):
 		return 1
@@ -132,7 +146,6 @@ def Receive_Participants(connection):
 	i = 0
 	for x in userlist:
 		if x.nick in connection.usermap:
-			print x.nick
 			i = i + 1
 	if i == len(userlist):
 		return 1

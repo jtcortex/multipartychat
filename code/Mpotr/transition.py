@@ -14,8 +14,14 @@ class MPOTRConnection(object):
 		self.state = MPOTRState(self)
 #		self.users = users
 		self.session_id = None
+		self.keyhash = None
 		self.usermap = {}
 		self.keytable = {}
+		self.associationtable = {}
+		self.users = []
+		self.public_pem = None
+		self.private_pem = None
+		self.keypair = None
 
 	def SetUsers(self, users):
 		self.users = users
@@ -26,6 +32,11 @@ class MPOTRConnection(object):
 			mpotr.ContInitiate(self, self.users)
 		elif state == "DSKE":
 			mpotr.DSKE(self, self.session_id, self.users, 1)
+		elif state == "Verify":
+			result = mpotr.DSKE(self, self.session_id, self.users, 2)
+			print result
+			if result == 1:
+				mpotr.GKA(self, self.keytable)
 	def Start(self, startState=None):
 		self.currentState = startState
 		mpotr.Initiate(self, self.users)
