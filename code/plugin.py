@@ -15,11 +15,14 @@ __module_version__ = "0.1"
 __module_description__ = "X-Chat mpOTR plugin"
 
 # Plugin/System/Crypto packages
-import xchat,sys,re
+import xchat,sys,re,os
 import M2Crypto
 
 # Ammend system path to include mpOTR library
-sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
+if os.name == "nt":
+	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
+else:	
+	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
 import mpotr
 from transition import *
 
