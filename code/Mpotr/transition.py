@@ -18,6 +18,7 @@ class MPOTRConnection(object):
 		self.usermap = {}
 		self.keytable = {}
 		self.associationtable = {}
+		self.userkeytable = {}
 		self.users = []
 		self.public_pem = None
 		self.private_pem = None
@@ -36,7 +37,10 @@ class MPOTRConnection(object):
 			result = mpotr.DSKE(self, self.session_id, self.users, 2)
 			print result
 			if result == 1:
-				mpotr.GKA(self, self.keytable)
+				mpotr.GKA(self, self.keytable, 0)
+		elif state == "MSGSTATE_ENCRYPTED":
+			self.currentState = "MSGSTATE_ENCRYPTED"
+			mpotr.GKA(self, self.keytable, 1)
 	def Start(self, startState=None):
 		self.currentState = startState
 		mpotr.Initiate(self, self.users)

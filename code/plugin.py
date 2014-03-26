@@ -83,13 +83,11 @@ def msg_cb(word, word_eol, userdata):
 	global acceptlist
 	global m
 	if ":?mpOTR?" in word:
-		sender = re.search('(?<=:)\w+', word[0])
-		SENDER = sender.group(0)
+		SENDER = GetSender(word[0])
 		INVITE = 1
 		print SENDER, "wishes to take this conversation off the record. Do you accept?"
 	elif ":!mpOTR!" in word:
-		sender = re.search('(?<=:)\w+', word[0])
-		SENDER = sender.group(0)
+		SENDER = GetSender(word[0])
 		for user in acceptlist:
 			if SENDER == user[0].nick:
 				user[1] = 1
@@ -98,33 +96,41 @@ def msg_cb(word, word_eol, userdata):
 			m.Start()
 	elif ":!mpOTR_Init!" in word:
 		setup()
-		sender = re.search('(?<=:)\w+', word[0])
-		SENDER = sender.group(0)
+		SENDER = GetSender(word[0])
 		m.Start()
 	if ":!c_" in word[3]:
-		sender = re.search('(?<=:)\w+', word[0])
-		name = sender.group(0)
+		name = GetSender(word[0])
 		rand_num = re.search('[0-9]+', word[3])
 		randn = rand_num.group(0)
 		m.usermap.update({name:randn})
-		if Receive_Participants(m) == 1:
+		if Receive_Participants(m,m.usermap) == 1:
 			m.SetState("ContInitiate")
 	elif ":\xc3\x93\x1d\x1a" in word[3]:
-		sender = re.search('(?<=:)\w+', word[0])
-		name = sender.group(0)
+		name = GetSender(word[0])
 		key = word[3].replace(":\xc3\x93\x1d\x1a", "")
 		m.keytable.update({name:key})
 		if Receive_Participants_Key(m) == 1:
 			m.SetState("DSKE")
 	elif ":30783132" in word[3]:
-		sender = re.search('(?<=:)\w+', word[0])
-		name = sender.group(0)
+		name = GetSender(word[0])
 		hashval = word[3].replace(":30783132", "")
 		m.associationtable.update({name:hashval})
 		if Receive_Hashes(m) == 1:
 			m.SetState("Verify")
+	elif ":0x14" in word[3]:
+		name = GetSender(word[0])
+		randnum = word[3].replace(":0x14", "")
+		m.userkeytable.update({name:randnum})
+		print m.userkeytable
+		if Receive_Participants(m, m.userkeytable) == 1:
+			m.SetState("MSGSTATE_ENCRYPTED")
 	return xchat.EAT_XCHAT
 
+def GetSender(word):
+	sender = re.search('(?<=:)\w+', word)
+	name = sender.group(0)
+	return name
+	
 def Receive_Hashes(connection):
 	i = 0
 	for x in userlist:
@@ -145,10 +151,10 @@ def Receive_Participants_Key(connection):
 	else:
 		return 0
 
-def Receive_Participants(connection):
+def Receive_Participants(connection, table):
 	i = 0
 	for x in userlist:
-		if x.nick in connection.usermap:
+		if x.nick in table:
 			i = i + 1
 	if i == len(userlist):
 		return 1
@@ -196,6 +202,5 @@ def printBanner():
 
 xchat.hook_print("Your Message", say_cb)
 xchat.hook_print("Message send", say_cb)
-#xchat.hook_print("Private Message", say_cb)
 xchat.hook_server("PRIVMSG", msg_cb)
 xchat.hook_command("MPOTR", mpotr_cb, help="/MPOTR <action> Performs mpOTR action for channel participants")

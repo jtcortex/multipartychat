@@ -20,6 +20,8 @@ from M2Crypto import EC
 from M2Crypto import BIO
 from M2Crypto import EVP
 
+from base64 import b64encode, b64decode
+
 debug = False
 # State Module
 from transition import *
@@ -34,6 +36,10 @@ def Broadcast(participants, msg=None):
 			if not xchat.nickcmp(y.nick, xchat.get_prefs("irc_nick1")) == 0:
 				xchat.command("msg " + y.nick + " " + msg)
 	return xchat.EAT_ALL
+	
+def SendMsg(user, message):
+	
+	xchat.command("msg " + user + " " + '0x14' + message)
 
 def Initiate(connection, participants, sender=None):
 	''' Initiate a chatroom C among the participants P in the context of
@@ -126,20 +132,37 @@ def DSKE(connection, sid, participants, phase=None):
 		if i == 0:
 			return 1
 
-def GKA(connection, keytable):
+def GKA(connection, keytable, state):
 	
-	z = connection.keypair
-	randgroupkey = random.getrandbits(128)
-        randnum = str.encode(str(randgroupkey))
-	for x,y in keytable.items():
-		if not x == xchat.get_prefs("irc_nick1"):
-			iv = random.getrandbits(128)
-			biny = binascii.unhexlify(y)
-			newy = ec_from_public_bin(biny)
-			z_shared = z.compute_dh_key(newy)	
-			print z_shared.encode("HEX")
-			cipher = EVP.Cipher('aes_256_cfb',z_shared,iv,op=1)
+	if state == 0:
+		z = connection.keypair
+		randgroupkey = random.getrandbits(128)
+		iv = random.getrandbits(128)
+		randnum = str.encode(str(randgroupkey))
+		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
+		for x,y in keytable.items():
+			if not x == xchat.get_prefs("irc_nick1"):
+				biny = binascii.unhexlify(y)
+				newy = ec_from_public_bin(biny)
+				z_shared = z.compute_dh_key(newy)	
+				print "This is the random number", randnum
+				iv = hex(iv)
+				encMsg = AES_Encrypt(z_shared,iv,randnum)
+				SendMsg(x,encMsg)
+	else:
+		randnums = [y for x,y in connection.keytable.items()]
+ 	       	randnums.sort()
+		randnums = "".join(randnums)
+		hash_object = hashlib.sha256(pubkeys)
+	    hex_dig = hash_object.hexdigest()
+		connection.keyhash = hex_dig
+def AES_Encrypt(key,iv,msg):
 
+	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
+	v = cipher.update(iv)
+	v = v + cipher.final()
+	v = b64encode(v)
+	return v
 	
 
 #def Attest(sid, participants, params):
