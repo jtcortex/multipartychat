@@ -156,6 +156,7 @@ def GKA(connection, keytable, state):
 		hash_object = hashlib.sha256(pubkeys)
 	    hex_dig = hash_object.hexdigest()
 		connection.keyhash = hex_dig
+
 def AES_Encrypt(key,iv,msg):
 
 	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
