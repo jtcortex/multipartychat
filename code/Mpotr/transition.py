@@ -23,6 +23,7 @@ class MPOTRConnection(object):
 		self.public_pem = None
 		self.private_pem = None
 		self.keypair = None
+		self.groupkey = None
 
 	def SetUsers(self, users):
 		self.users = users

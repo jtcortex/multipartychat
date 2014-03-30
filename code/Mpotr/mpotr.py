@@ -140,27 +140,44 @@ def GKA(connection, keytable, state):
 		iv = random.getrandbits(128)
 		randnum = str.encode(str(randgroupkey))
 		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
-		for x,y in keytable.items():
+		for x,y in connection.keytable.items():
 			if not x == xchat.get_prefs("irc_nick1"):
 				biny = binascii.unhexlify(y)
 				newy = ec_from_public_bin(biny)
 				z_shared = z.compute_dh_key(newy)	
 				print "This is the random number", randnum
-				iv = hex(iv)
+				iv = str.encode(hex(iv))
 				encMsg = AES_Encrypt(z_shared,iv,randnum)
-				SendMsg(x,encMsg)
+				print "iv is", iv
+				print "enc msg is", encMsg
+				fullMsg = iv + encMsg
+				print "Full Message", fullMsg[:35]
+				print "Rest of enc msg", fullMsg[36:]
+				SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.keytable.items()]
  	       	randnums.sort()
 		randnums = "".join(randnums)
-		hash_object = hashlib.sha256(pubkeys)
-	    hex_dig = hash_object.hexdigest()
-		connection.keyhash = hex_dig
+		hash_object = hashlib.sha256(randnums)
+    		hex_dig = hash_object.hexdigest()
+		connection.groupkey = hex_dig
+		print connection.groupkey
+		#print "Decrypted", AES_Decrypt(
 
 def AES_Encrypt(key,iv,msg):
 
 	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
 	v = cipher.update(iv)
+	v = v + cipher.final()
+	v = b64encode(v)
+	return v
+
+def AES_Decrpyt(key, iv, msg):
+
+	iv = '\0' * 16
+	data = b64decode(msg)
+	cipher = EVP.Cipher('aes_256_cfb', key, iv, op=0)
+	v = cipher.update(data)
 	v = v + cipher.final()
 	v = b64encode(v)
 	return v

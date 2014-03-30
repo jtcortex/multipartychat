@@ -120,11 +120,26 @@ def msg_cb(word, word_eol, userdata):
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
 		randnum = word[3].replace(":0x14", "")
+		key = GetKey(name)
+		#mpotr.AES_Decrypt(key, 
 		m.userkeytable.update({name:randnum})
 		print m.userkeytable
+		print "KEYTABLE", m.keytable
 		if Receive_Participants(m, m.userkeytable) == 1:
 			m.SetState("MSGSTATE_ENCRYPTED")
 	return xchat.EAT_XCHAT
+
+def GetKey(name):
+	
+	for x,y in m.keytable.items():
+		if x == name:
+			key = y
+			z = m.keypair
+			biny = binascii.unhexlify(y)
+			newy = mpotr.ec_from_public_bin(biny)
+			z_shared = z.compute_dh_key(newy)
+			return z_shared
+	return None
 
 def GetSender(word):
 	sender = re.search('(?<=:)\w+', word)
