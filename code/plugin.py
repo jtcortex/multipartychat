@@ -15,7 +15,7 @@ __module_version__ = "0.1"
 __module_description__ = "X-Chat mpOTR plugin"
 
 # Plugin/System/Crypto packages
-import xchat,sys,re,os
+import xchat,sys,re,os, binascii
 import M2Crypto
 
 # Ammend system path to include mpOTR library
@@ -117,11 +117,15 @@ def msg_cb(word, word_eol, userdata):
 		m.associationtable.update({name:hashval})
 		if Receive_Hashes(m) == 1:
 			m.SetState("Verify")
+			
+	# Perform an exchange between all users of the random values for the GKA
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
 		randnum = word[3].replace(":0x14", "")
 		key = GetKey(name)
-		#mpotr.AES_Decrypt(key, 
+		iv = randnum[:35]
+		msg = randnum[35:]
+		randnum = mpotr.AES_Decrypt(key, iv, msg)
 		m.userkeytable.update({name:randnum})
 		print m.userkeytable
 		print "KEYTABLE", m.keytable
@@ -130,7 +134,7 @@ def msg_cb(word, word_eol, userdata):
 	return xchat.EAT_XCHAT
 
 def GetKey(name):
-	
+	''' Get the associated key for this user '''
 	for x,y in m.keytable.items():
 		if x == name:
 			key = y
@@ -142,6 +146,7 @@ def GetKey(name):
 	return None
 
 def GetSender(word):
+	''' Return the name of the sender of a particular message '''
 	sender = re.search('(?<=:)\w+', word)
 	name = sender.group(0)
 	return name

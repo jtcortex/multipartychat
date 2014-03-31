@@ -148,11 +148,7 @@ def GKA(connection, keytable, state):
 				print "This is the random number", randnum
 				iv = str.encode(hex(iv))
 				encMsg = AES_Encrypt(z_shared,iv,randnum)
-				print "iv is", iv
-				print "enc msg is", encMsg
 				fullMsg = iv + encMsg
-				print "Full Message", fullMsg[:35]
-				print "Rest of enc msg", fullMsg[36:]
 				SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.keytable.items()]
@@ -172,7 +168,7 @@ def AES_Encrypt(key,iv,msg):
 	v = b64encode(v)
 	return v
 
-def AES_Decrpyt(key, iv, msg):
+def AES_Decrypt(key, iv, msg):
 
 	iv = '\0' * 16
 	data = b64decode(msg)
