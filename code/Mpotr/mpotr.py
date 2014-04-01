@@ -38,7 +38,7 @@ def Broadcast(participants, msg=None):
 	return xchat.EAT_ALL
 	
 def SendMsg(user, message):
-	
+	print "MADE IT"
 	xchat.command("msg " + user + " " + '0x14' + message)
 
 def Initiate(connection, participants, sender=None):
@@ -137,18 +137,24 @@ def GKA(connection, keytable, state):
 	if state == 0:
 		z = connection.keypair
 		randgroupkey = random.getrandbits(128)
-		iv = random.getrandbits(128)
-		randnum = str.encode(str(randgroupkey))
+		#iv = random.getrandbits(128)
+		#iv = '\0' * 16
+		iv = os.urandom(16)
+		print "IV SEND", b64encode(iv)
+		#randnum = str.encode(str(randgroupkey))
+		randnum = str(randgroupkey)
+		print randnum
 		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
 		for x,y in connection.keytable.items():
 			if not x == xchat.get_prefs("irc_nick1"):
 				biny = binascii.unhexlify(y)
 				newy = ec_from_public_bin(biny)
 				z_shared = z.compute_dh_key(newy)	
-				print "This is the random number", randnum
-				iv = str.encode(hex(iv))
-				encMsg = AES_Encrypt(z_shared,iv,randnum)
-				fullMsg = iv + encMsg
+				encMsg = AES_Encrypt(b64encode(z_shared),b64encode(iv),b64encode(randnum))
+				#decMsg = AES_Decrypt(b64encode(z_shared), b64encode(iv), encMsg)
+				#print b64decode(decMsg)
+				fullMsg = b64encode(iv) + encMsg
+				print "FULL MSG", fullMsg
 				SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.keytable.items()]
@@ -157,25 +163,28 @@ def GKA(connection, keytable, state):
 		hash_object = hashlib.sha256(randnums)
     		hex_dig = hash_object.hexdigest()
 		connection.groupkey = hex_dig
-		print connection.groupkey
+		#print connection.groupkey
 		#print "Decrypted", AES_Decrypt(
 
 def AES_Encrypt(key,iv,msg):
 
+	key = b64decode(key)
+	iv = b64decode(iv)
 	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
-	v = cipher.update(iv)
+	v = cipher.update(msg)
 	v = v + cipher.final()
+	del cipher
 	v = b64encode(v)
 	return v
 
 def AES_Decrypt(key, iv, msg):
 
-	iv = '\0' * 16
-	data = b64decode(msg)
+	key = b64decode(key)
+	iv = b64decode(iv)
+	msg = b64decode(msg)
 	cipher = EVP.Cipher('aes_256_cfb', key, iv, op=0)
-	v = cipher.update(data)
+	v = cipher.update(msg)
 	v = v + cipher.final()
-	v = b64encode(v)
 	return v
 	
 

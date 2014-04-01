@@ -17,6 +17,7 @@ __module_description__ = "X-Chat mpOTR plugin"
 # Plugin/System/Crypto packages
 import xchat,sys,re,os, binascii
 import M2Crypto
+from base64 import b64encode, b64decode
 
 # Ammend system path to include mpOTR library
 if os.name == "nt":
@@ -122,13 +123,16 @@ def msg_cb(word, word_eol, userdata):
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
 		randnum = word[3].replace(":0x14", "")
+		print "RAND", randnum
 		key = GetKey(name)
-		iv = randnum[:35]
-		msg = randnum[35:]
-		randnum = mpotr.AES_Decrypt(key, iv, msg)
-		m.userkeytable.update({name:randnum})
+		iv = randnum[:24]
+		print "IV", iv
+		msg = randnum[24:]
+		#randnum = mpotr.AES_Decrypt(key, iv, msg)
+		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
+		m.userkeytable.update({name:b64decode(randnum)})
 		print m.userkeytable
-		print "KEYTABLE", m.keytable
+		#print "KEYTABLE", m.keytable
 		if Receive_Participants(m, m.userkeytable) == 1:
 			m.SetState("MSGSTATE_ENCRYPTED")
 	return xchat.EAT_XCHAT
