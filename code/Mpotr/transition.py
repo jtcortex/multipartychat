@@ -39,9 +39,11 @@ class MPOTRConnection(object):
 			print result
 			if result == 1:
 				mpotr.GKA(self, self.keytable, 0)
+		elif state == "GROUP_KEY_AUTHENTICATE":
+			self.currentState = "GROUP_KEY_AUTHENTICATE"
+			mpotr.GKA(self, self.keytable, 1)
 		elif state == "MSGSTATE_ENCRYPTED":
 			self.currentState = "MSGSTATE_ENCRYPTED"
-			mpotr.GKA(self, self.keytable, 1)
 	def Start(self, startState=None):
 		self.currentState = startState
 		mpotr.Initiate(self, self.users)

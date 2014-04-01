@@ -157,13 +157,14 @@ def GKA(connection, keytable, state):
 				print "FULL MSG", fullMsg
 				SendMsg(x,fullMsg)
 	else:
-		randnums = [y for x,y in connection.keytable.items()]
+		randnums = [y for x,y in connection.userkeytable.items()]
  	       	randnums.sort()
 		randnums = "".join(randnums)
 		hash_object = hashlib.sha256(randnums)
     		hex_dig = hash_object.hexdigest()
 		connection.groupkey = hex_dig
-		#print connection.groupkey
+		print "GROUP KEY", connection.groupkey
+		connection.SetState("MSGSTATE_ENCRYPTED")
 		#print "Decrypted", AES_Decrypt(
 
 def AES_Encrypt(key,iv,msg):

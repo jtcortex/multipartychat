@@ -30,15 +30,22 @@ from transition import *
 ## Some global variables for the script
 SENDER = ""
 INVITE = 0
+FLAG = 0
 acceptlist = []
 userlist = []
 m = MPOTRConnection()
 
 def broadcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
-	for x in users:
-		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
-			xchat.command("msg " + x.nick + " " + msg)
+	if m.currentState == "MSGSTATE_ENCRYPTED":
+		for x in users:
+			if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
+				xchat.command("msg " + x.nick + " " + msg)
+		FLAG = 0
+	else:
+		for x in users:
+			if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
+				xchat.command("msg " + x.nick + " " + msg)
 	return xchat.EAT_ALL
 		
 
@@ -66,6 +73,10 @@ def mpotr_cb(word, word_eol, userdata):
 def say_cb(word, word_eol, userdata):
 	''' Word Interception'''
 	return xchat.EAT_ALL
+
+def privsay_cb(word, word_eol, userdata):
+	FLAG = 1
+	broadcast(xchat.get_list("users"), 0, word[1])
 
 def synchronize():
 	msg = "?mpOTR?"
@@ -132,9 +143,8 @@ def msg_cb(word, word_eol, userdata):
 		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
 		m.userkeytable.update({name:b64decode(randnum)})
 		print m.userkeytable
-		#print "KEYTABLE", m.keytable
 		if Receive_Participants(m, m.userkeytable) == 1:
-			m.SetState("MSGSTATE_ENCRYPTED")
+			m.SetState("GROUP_KEY_AUTHENTICATE")
 	return xchat.EAT_XCHAT
 
 def GetKey(name):
@@ -209,6 +219,9 @@ def allAccept():
 	else:
 		return 0
 
+def test_cb():
+	print "MADE IT"
+
 def printBanner():
 	
 	print "*****************************************************************"
@@ -221,10 +234,11 @@ def printBanner():
 	print "*****************************************************************"
 	print "*    Multi-Party Off-the-record Messaging plugin for X-Chat     *"
 	print "*****************************************************************"
+	print "** WARNING: DO NOT ASSUME THAT ANY SYSTEM IS 100% SECURE. USE YOUR BEST JUDGEMENT **"
 	print "-> This conversation has been taken off the record"
 	print "-> Say Hi!"
 
 xchat.hook_print("Your Message", say_cb)
-xchat.hook_print("Message send", say_cb)
+xchat.hook_print("Message send", if FLAG == 0: say_cb else: privsay_cb)
 xchat.hook_server("PRIVMSG", msg_cb)
 xchat.hook_command("MPOTR", mpotr_cb, help="/MPOTR <action> Performs mpOTR action for channel participants")
