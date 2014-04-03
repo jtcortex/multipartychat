@@ -37,17 +37,21 @@ m = MPOTRConnection()
 
 def broadcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
-	if m.currentState == "MSGSTATE_ENCRYPTED":
-		for x in users:
-			if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
-				xchat.command("msg " + x.nick + " " + msg)
-		FLAG = 0
-	else:
-		for x in users:
-			if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
-				xchat.command("msg " + x.nick + " " + msg)
+	for x in users:
+		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
+			xchat.command("msg " + x.nick + " " + msg)
 	return xchat.EAT_ALL
-		
+	
+def encrypted_broadcast(users, msg, key):
+	global FLAG
+	iv = mpotr.GetIV()
+	encMsg = mpotr.AES_Encrypt(b64encode(key), b64encode(iv), b64encode(msg))
+	sendMsg = b64encode(iv) + encMsg
+	for x in users:
+		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
+			xchat.command("msg " + x.nick + " " + sendMsg)
+	FLAG = 0
+	return xchat.EAT_ALL
 
 def mpotr_cb(word, word_eol, userdata):
 	''' Callback for /mpotr command '''
@@ -72,12 +76,12 @@ def mpotr_cb(word, word_eol, userdata):
 
 def say_cb(word, word_eol, userdata):
 	''' Word Interception'''
+	global FLAG
+	if FLAG == 0 and m.currentState == "MSGSTATE_ENCRYPTED":
+		FLAG = 1
+		encrypted_broadcast(xchat.get_list("users"), word[1], m.groupkey)
 	return xchat.EAT_ALL
-
-def privsay_cb(word, word_eol, userdata):
-	FLAG = 1
-	broadcast(xchat.get_list("users"), 0, word[1])
-
+	
 def synchronize():
 	msg = "?mpOTR?"
 	broadcast(xchat.get_list("users"), 0, msg)
@@ -134,10 +138,10 @@ def msg_cb(word, word_eol, userdata):
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
 		randnum = word[3].replace(":0x14", "")
-		print "RAND", randnum
+		#print "RAND", randnum
 		key = GetKey(name)
 		iv = randnum[:24]
-		print "IV", iv
+		#print "IV", iv
 		msg = randnum[24:]
 		#randnum = mpotr.AES_Decrypt(key, iv, msg)
 		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
@@ -145,7 +149,17 @@ def msg_cb(word, word_eol, userdata):
 		print m.userkeytable
 		if Receive_Participants(m, m.userkeytable) == 1:
 			m.SetState("GROUP_KEY_AUTHENTICATE")
-	return xchat.EAT_XCHAT
+	elif m.currentState == "MSGSTATE_ENCRYPTED":
+		key = m.groupkey
+		name = GetSender(word[0])
+		msg = word[3]
+		iv = msg[1:25]
+		newmsg = msg[25:]
+		msg = mpotr.AES_Decrypt(b64encode(key), iv, newmsg)
+		xchat.emit_print("Channel Message", name, b64decode(msg), "@")
+		return xchat.EAT_ALL
+	else:
+		return xchat.EAT_ALL
 
 def GetKey(name):
 	''' Get the associated key for this user '''
@@ -219,8 +233,13 @@ def allAccept():
 	else:
 		return 0
 
-def test_cb():
-	print "MADE IT"
+def test_cb(word, word_eol, userdata):
+	global FLAG
+	if FLAG == 0 and m.currentState == "MSGSTATE_ENCRYPTED":
+		FLAG = 1
+		xchat.emit_print("Channel Message", xchat.get_prefs("irc_nick1"), word_eol[0], "@")
+		encrypted_broadcast(xchat.get_list("users"), word_eol[0], m.groupkey)
+	return xchat.EAT_ALL
 
 def printBanner():
 	
@@ -238,7 +257,9 @@ def printBanner():
 	print "-> This conversation has been taken off the record"
 	print "-> Say Hi!"
 
+#Hook anything that is typed to see if msgs should be encrypted
+xchat.hook_command('', test_cb)
 xchat.hook_print("Your Message", say_cb)
-xchat.hook_print("Message send", if FLAG == 0: say_cb else: privsay_cb)
+xchat.hook_print("Message send", say_cb)
 xchat.hook_server("PRIVMSG", msg_cb)
 xchat.hook_command("MPOTR", mpotr_cb, help="/MPOTR <action> Performs mpOTR action for channel participants")

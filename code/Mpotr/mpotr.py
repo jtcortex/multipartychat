@@ -140,10 +140,10 @@ def GKA(connection, keytable, state):
 		#iv = random.getrandbits(128)
 		#iv = '\0' * 16
 		iv = os.urandom(16)
-		print "IV SEND", b64encode(iv)
+		#print "IV SEND", b64encode(iv)
 		#randnum = str.encode(str(randgroupkey))
 		randnum = str(randgroupkey)
-		print randnum
+		#print randnum
 		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
 		for x,y in connection.keytable.items():
 			if not x == xchat.get_prefs("irc_nick1"):
@@ -154,7 +154,7 @@ def GKA(connection, keytable, state):
 				#decMsg = AES_Decrypt(b64encode(z_shared), b64encode(iv), encMsg)
 				#print b64decode(decMsg)
 				fullMsg = b64encode(iv) + encMsg
-				print "FULL MSG", fullMsg
+		#		print "FULL MSG", fullMsg
 				SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.userkeytable.items()]
@@ -163,9 +163,12 @@ def GKA(connection, keytable, state):
 		hash_object = hashlib.sha256(randnums)
     		hex_dig = hash_object.hexdigest()
 		connection.groupkey = hex_dig
-		print "GROUP KEY", connection.groupkey
+		#print "GROUP KEY", connection.groupkey
 		connection.SetState("MSGSTATE_ENCRYPTED")
 		#print "Decrypted", AES_Decrypt(
+		
+def GetIV():
+	return os.urandom(16)
 
 def AES_Encrypt(key,iv,msg):
 
