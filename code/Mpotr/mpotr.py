@@ -191,7 +191,6 @@ def AES_Decrypt(key, iv, msg):
 	v = v + cipher.final()
 	return v
 	
-
 #def Attest(sid, participants, params):
 #''' Authenticate (previously) unauthenticated protocol parameters
 #for the current session in the context of party X
@@ -271,6 +270,10 @@ def Abort(msgerror):
 	
 	print msgerror
 
+def BeginLogging(connection):
+	fileformat = connection.server + connection.channel
+	print fileformat
+	pass	
 
 #def AuthSend(M, sid, gk, ex):
 ''' Broadcast message M authenticated under party X's epheremal 
@@ -284,5 +287,6 @@ signing key to chatroom C
 #def AuthReceive(sid, gk, )
 
 
-#def Shutdown(
+def Shutdown(sent, received, participants, sid, key):
+	pass
 

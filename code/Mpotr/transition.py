@@ -8,7 +8,7 @@ import mpotr
 class MPOTRConnection(object):
 	""" mpOTR Connection """
 
-	def __init__(self, states=[]):
+	def __init__(self, path, states=[]):
 		self._states = states
 		self.currentState = None
 		self.state = MPOTRState(self)
@@ -24,9 +24,15 @@ class MPOTRConnection(object):
 		self.private_pem = None
 		self.keypair = None
 		self.groupkey = None
+		self.path = path
+		print self.path
 
 	def SetUsers(self, users):
 		self.users = users
+
+	def SetInfo(self, server, channel):
+		self.server = server
+		self.channel = channel
 
 	def SetState(self, state):
 		self.currentState = state
@@ -44,6 +50,7 @@ class MPOTRConnection(object):
 			mpotr.GKA(self, self.keytable, 1)
 		elif state == "MSGSTATE_ENCRYPTED":
 			self.currentState = "MSGSTATE_ENCRYPTED"
+			mpotr.BeginLogging(self)
 	def Start(self, startState=None):
 		self.currentState = startState
 		mpotr.Initiate(self, self.users)

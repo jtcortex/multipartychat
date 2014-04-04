@@ -24,6 +24,7 @@ if os.name == "nt":
 	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
 else:	
 	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
+	logpath = "/home/.xchat2"
 import mpotr
 from transition import *
 
@@ -33,7 +34,7 @@ INVITE = 0
 FLAG = 0
 acceptlist = []
 userlist = []
-m = MPOTRConnection()
+m = MPOTRConnection(logpath)
 
 def broadcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
@@ -57,7 +58,7 @@ def mpotr_cb(word, word_eol, userdata):
 	''' Callback for /mpotr command '''
 	global m
 	if len(word) < 2:
-		print "Second arg must be the action!"
+	#	print "Currently logging to: ", GetLogPath()
 		print "\nAvailable actions:"
 		print "     auth - initiate mpOTR session and authenticate participants"
 	elif word[1] == "auth":
@@ -81,6 +82,10 @@ def say_cb(word, word_eol, userdata):
 		FLAG = 1
 		encrypted_broadcast(xchat.get_list("users"), word[1], m.groupkey)
 	return xchat.EAT_ALL
+
+def GetLogPath():
+	logfile = m.server + "-" + m.channel + "-" + time.strftime("%d.%m.%Y")
+	print "Logfile", logfile
 	
 def synchronize():
 	msg = "?mpOTR?"
@@ -212,8 +217,10 @@ def Receive_Participants(connection, table):
 def setup():
 	global acceptlist
 	global userlist
+	global m
 	acceptlist = []
 	userlist = xchat.get_list("users")
+	m.SetInfo(xchat.get_info("server"), xchat.get_info("channel"))
 	for x in userlist:
 		if xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
 			acceptlist.append([x, 1])
