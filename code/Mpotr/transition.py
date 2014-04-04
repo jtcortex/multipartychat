@@ -29,9 +29,10 @@ class MPOTRConnection(object):
 	def SetUsers(self, users):
 		self.users = users
 
-	def SetInfo(self, server, channel):
+	def SetInfo(self, server, channel, username):
 		self.server = server
 		self.channel = channel
+		self.username = username
 
 	def SetState(self, state):
 		self.currentState = state

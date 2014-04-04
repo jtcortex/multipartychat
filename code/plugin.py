@@ -26,7 +26,9 @@ if os.name == "nt":
 	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\"
 else:	
 	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
-	logpath = "/home/.xchat2"
+	logpath = "/tmp/xchatlogs/"
+	if not os.path.exists(logpath):
+		os.makedirs(logpath)
 import mpotr
 from transition import *
 
@@ -222,7 +224,7 @@ def setup():
 	global m
 	acceptlist = []
 	userlist = xchat.get_list("users")
-	m.SetInfo(xchat.get_info("server"), xchat.get_info("channel"))
+	m.SetInfo(xchat.get_info("server"), xchat.get_info("channel"), xchat.get_prefs("irc_nick1"))
 	for x in userlist:
 		if xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
 			acceptlist.append([x, 1])
