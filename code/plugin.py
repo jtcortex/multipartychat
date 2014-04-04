@@ -22,6 +22,8 @@ from base64 import b64encode, b64decode
 # Ammend system path to include mpOTR library
 if os.name == "nt":
 	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
+	user = os.environ.get("USERNAME")
+	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\"
 else:	
 	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
 	logpath = "/home/.xchat2"

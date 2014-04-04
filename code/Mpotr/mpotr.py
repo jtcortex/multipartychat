@@ -271,8 +271,12 @@ def Abort(msgerror):
 	print msgerror
 
 def BeginLogging(connection):
-	fileformat = connection.server + connection.channel
-	print fileformat
+	fileformat = connection.server + "-" + connection.channel + "-" + time.strftime("%d.%m.%Y") + "-" + "OTR" + ".txt"
+	filepath = connection.path + fileformat
+	print filepath
+	file = open(filepath, 'w+')
+	print "YES"
+	file.write("HEY")
 	pass	
 
 #def AuthSend(M, sid, gk, ex):

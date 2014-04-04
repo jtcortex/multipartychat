@@ -25,7 +25,6 @@ class MPOTRConnection(object):
 		self.keypair = None
 		self.groupkey = None
 		self.path = path
-		print self.path
 
 	def SetUsers(self, users):
 		self.users = users
