@@ -38,7 +38,7 @@ def Broadcast(participants, msg=None):
 	return xchat.EAT_ALL
 	
 def SendMsg(user, message):
-	print "MADE IT"
+	#print "MADE IT"
 	xchat.command("msg " + user + " " + '0x14' + message)
 
 def Initiate(connection, participants, sender=None):
@@ -273,10 +273,14 @@ def Abort(msgerror):
 def BeginLogging(connection):
 	fileformat = connection.server + "-" + connection.channel + "-" + connection.username + "-" + time.strftime("%d.%m.%Y") + "-" + "OTR" + ".txt"
 	filepath = connection.path + fileformat
-	print filepath
+	#print filepath
+	connection.path = filepath
 	file = open(filepath, 'a')
-	file.write("\n**** " + "BEGIN LOGGING AT " + time.strftime("%c"))
-	pass	
+	file.write("\n**** " + "BEGIN LOGGING AT " + time.strftime("%c") + "FOR SESSION ID " + connection.session_id)
+	
+def Send_Epheremal(connection):
+	Broadcast(connection.users, "YES")
+	print "SHUT DOWN COMPLETE"
 
 #def AuthSend(M, sid, gk, ex):
 ''' Broadcast message M authenticated under party X's epheremal 

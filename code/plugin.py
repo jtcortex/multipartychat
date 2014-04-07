@@ -15,7 +15,7 @@ __module_version__ = "0.1"
 __module_description__ = "X-Chat mpOTR plugin"
 
 # Plugin/System/Crypto packages
-import xchat,sys,re,os, binascii
+import xchat,sys,re,os, binascii, time, hashlib
 import M2Crypto
 from base64 import b64encode, b64decode
 
@@ -23,7 +23,9 @@ from base64 import b64encode, b64decode
 if os.name == "nt":
 	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
 	user = os.environ.get("USERNAME")
-	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\"
+	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\xchatlogs\\"
+	if not os.path.exists(logpath):
+		os.makedirs(logpath)
 else:	
 	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
 	logpath = "/tmp/xchatlogs/"
@@ -39,9 +41,11 @@ FLAG = 0
 acceptlist = []
 userlist = []
 m = MPOTRConnection(logpath)
+t0 = ""
 
 def broadcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
+	print msg
 	for x in users:
 		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
 			xchat.command("msg " + x.nick + " " + msg)
@@ -50,6 +54,9 @@ def broadcast(users, p2p, msg):
 def encrypted_broadcast(users, msg, key):
 	global FLAG
 	iv = mpotr.GetIV()
+	file = m.path
+	f = open(file, 'a')
+	f.write("\n" + time.strftime("%b") + " " + time.strftime("%a") + " " + time.strftime("%d") + " " + time.strftime("%X") + " <" + xchat.get_prefs("irc_nick1")	+ "> " + msg)
 	encMsg = mpotr.AES_Encrypt(b64encode(key), b64encode(iv), b64encode(msg))
 	sendMsg = b64encode(iv) + encMsg
 	for x in users:
@@ -61,11 +68,14 @@ def encrypted_broadcast(users, msg, key):
 def mpotr_cb(word, word_eol, userdata):
 	''' Callback for /mpotr command '''
 	global m
+	global t0
 	if len(word) < 2:
 	#	print "Currently logging to: ", GetLogPath()
 		print "\nAvailable actions:"
 		print "     auth - initiate mpOTR session and authenticate participants"
 	elif word[1] == "auth":
+		t0 = time.time()
+		m.t0 = t0
 		m.SetUsers(xchat.get_list("users"))
 		setup()
 		if '-p2p' in word_eol:
@@ -75,6 +85,12 @@ def mpotr_cb(word, word_eol, userdata):
 	elif word[1] == "y":
 		m.SetUsers(xchat.get_list("users"))
 		acknowledge()
+	elif word[1] == "shutdown":
+		m.t0 = time.clock()
+		digest = GetChatDigest(m.path)
+		m.digestTable.update({xchat.get_prefs("irc_nick1"):digest})
+		broadcast(xchat.get_list("users"), 0, "shutdown")
+		broadcast(xchat.get_list("users"), 0, '0x16' + str(digest))
 	else:
 		xchat.prnt("Unknown action")
 	return xchat.EAT_ALL
@@ -90,6 +106,24 @@ def say_cb(word, word_eol, userdata):
 def GetLogPath():
 	logfile = m.server + "-" + m.channel + "-" + time.strftime("%d.%m.%Y")
 	print "Logfile", logfile
+	
+def GetChatDigest(path):
+	
+	count = 100000000000
+	lines = []
+	for index,line in enumerate(open(path)):
+		if m.session_id in line:
+			count = index
+		if index > count:
+			lines.append(line.split()[4]+line.split()[5])
+	lines.sort()
+	z = "".join(lines)
+	hash_object = hashlib.sha256(z)
+	hex_dig = hash_object.hexdigest()
+	chat_hash = hex_dig
+	print "HASH", chat_hash
+	return chat_hash
+	
 	
 def synchronize():
 	msg = "?mpOTR?"
@@ -142,7 +176,15 @@ def msg_cb(word, word_eol, userdata):
 		m.associationtable.update({name:hashval})
 		if Receive_Hashes(m) == 1:
 			m.SetState("Verify")
-			
+	elif ":shutdown" in word[3]:
+		digest = GetChatDigest(m.path)
+		broadcast(xchat.get_list("users"), 0, '0x16' + str(digest))
+	elif ":0x16" in word[3]:
+		name = GetSender(word[0])
+		digest = word[3].replace(":0x16", "")
+		m.digestTable.update({name:digest})
+		if Receive_Participants(m, m.digestTable) == 1:
+			m.SetState("SHUTDOWN_COMPLETE")
 	# Perform an exchange between all users of the random values for the GKA
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
@@ -155,7 +197,7 @@ def msg_cb(word, word_eol, userdata):
 		#randnum = mpotr.AES_Decrypt(key, iv, msg)
 		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
 		m.userkeytable.update({name:b64decode(randnum)})
-		print m.userkeytable
+		#print m.userkeytable
 		if Receive_Participants(m, m.userkeytable) == 1:
 			m.SetState("GROUP_KEY_AUTHENTICATE")
 	elif m.currentState == "MSGSTATE_ENCRYPTED":
@@ -165,7 +207,14 @@ def msg_cb(word, word_eol, userdata):
 		iv = msg[1:25]
 		newmsg = msg[25:]
 		msg = mpotr.AES_Decrypt(b64encode(key), iv, newmsg)
+		file = m.path
+		f = open(file, 'a')
+		f.write("\n" + time.strftime("%b") + " " + time.strftime("%a") + " " + time.strftime("%d") + " " + time.strftime("%X") + " <" + name	+ "> " + b64decode(msg))
 		xchat.emit_print("Channel Message", name, b64decode(msg), "@")
+		f = open('myfile.dat', 'rb')
+		lines = f.readlines()
+		t = lines[-1]
+		print "MSGTIME ", time.clock() - float(t)
 		return xchat.EAT_ALL
 	else:
 		return xchat.EAT_ALL
@@ -248,6 +297,10 @@ def test_cb(word, word_eol, userdata):
 	global FLAG
 	if FLAG == 0 and m.currentState == "MSGSTATE_ENCRYPTED":
 		FLAG = 1
+		m.t0 = time.clock()
+		f = open('myfile.dat', 'w+')
+		f.write(str(m.t0))
+		print str(m.t0)
 		xchat.emit_print("Channel Message", xchat.get_prefs("irc_nick1"), word_eol[0], "@")
 		encrypted_broadcast(xchat.get_list("users"), word_eol[0], m.groupkey)
 	return xchat.EAT_ALL
