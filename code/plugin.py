@@ -15,7 +15,7 @@ __module_version__ = "0.1"
 __module_description__ = "X-Chat mpOTR plugin"
 
 # Plugin/System/Crypto packages
-import xchat,sys,re,os, binascii, time, hashlib
+import xchat,sys,re,os, binascii, time, hashlib, threading
 import M2Crypto
 from base64 import b64encode, b64decode
 
@@ -156,7 +156,8 @@ def msg_cb(word, word_eol, userdata):
 	elif ":!mpOTR_Init!" in word:
 		setup()
 		SENDER = GetSender(word[0])
-		m.Start()
+		newthread = threading.Thread(target=m.Start)
+		newthread.start()
 	if ":!c_" in word[3]:
 		name = GetSender(word[0])
 		rand_num = re.search('[0-9]+', word[3])

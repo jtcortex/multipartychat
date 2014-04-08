@@ -3,7 +3,7 @@
 # transition.py
 # State machine for the MPOTR Connection
 
-import mpotr, time
+import mpotr, time, thread
 
 class MPOTRConnection(object):
 	""" mpOTR Connection """
