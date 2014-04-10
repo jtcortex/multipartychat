@@ -1,14 +1,7 @@
 #!/usr/bin/env python
-'''
- * Multi-Party Off-The-Record Messaging (Experimental)
- *
- * Author: James Corcoran
- * Computer Engineering and Computer Science Dept
- * JB Speed School of Engineering
- * University of Louisville, KY, USA
- *
- * Based on the work of Goldberg, et. al.
-'''
+
+# mpotr.py
+# mpOTR Python Library (not currently based on protocol specification)
 
 import sys,random,hashlib,binascii,os,math
 import re
@@ -42,12 +35,13 @@ def SendMsg(user, message):
 	xchat.command("msg " + user + " " + '0x14' + message)
 
 def Initiate(connection, participants, sender=None):
-	''' Initiate a chatroom C among the participants P in the context of
-	party X. On successful completion, all participants hold a shared 
-	encryption key, epheremal public signature keys for all other 
-	participants, and have authenticated all other participants and 
-	protocol parameters. 
 	'''
+	Initiate the initial request for off-the-record converation
+	
+	@param connection: Current mpOTR connection
+	@type connection: MPOTRConnection instance
+	'''
+	
 	session_id = None
 	sent = 0 
 	received = 0
@@ -84,7 +78,7 @@ def CreateSession(participants, connection):
 	randnum = str.encode(str(r))
 	connection.usermap.update({xchat.get_prefs("irc_nick1"):randnum})
 	new_randnum = "!c_" + randnum
-
+	print "MADE IT HERE"
 	Broadcast(participants, new_randnum)
 
 def DSKE(connection, sid, participants, phase=None):

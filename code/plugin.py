@@ -70,12 +70,9 @@ def mpotr_cb(word, word_eol, userdata):
 	global m
 	global t0
 	if len(word) < 2:
-	#	print "Currently logging to: ", GetLogPath()
 		print "\nAvailable actions:"
 		print "     auth - initiate mpOTR session and authenticate participants"
 	elif word[1] == "auth":
-		t0 = time.time()
-		m.t0 = t0
 		m.SetUsers(xchat.get_list("users"))
 		setup()
 		if '-p2p' in word_eol:
@@ -86,7 +83,6 @@ def mpotr_cb(word, word_eol, userdata):
 		m.SetUsers(xchat.get_list("users"))
 		acknowledge()
 	elif word[1] == "shutdown":
-		m.t0 = time.clock()
 		digest = GetChatDigest(m.path)
 		m.digestTable.update({xchat.get_prefs("irc_nick1"):digest})
 		broadcast(xchat.get_list("users"), 0, "shutdown")
@@ -156,9 +152,9 @@ def msg_cb(word, word_eol, userdata):
 	elif ":!mpOTR_Init!" in word:
 		setup()
 		SENDER = GetSender(word[0])
-		newthread = threading.Thread(target=m.Start)
-		newthread.start()
+		m.Start()
 	if ":!c_" in word[3]:
+		print "GOT IT"
 		name = GetSender(word[0])
 		rand_num = re.search('[0-9]+', word[3])
 		randn = rand_num.group(0)
@@ -215,7 +211,6 @@ def msg_cb(word, word_eol, userdata):
 		f = open('myfile.dat', 'rb')
 		lines = f.readlines()
 		t = lines[-1]
-		print "MSGTIME ", time.clock() - float(t)
 		return xchat.EAT_ALL
 	else:
 		return xchat.EAT_ALL

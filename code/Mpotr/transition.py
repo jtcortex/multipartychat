@@ -52,12 +52,8 @@ class MPOTRConnection(object):
 			mpotr.GKA(self, self.keytable, 1)
 		elif state == "MSGSTATE_ENCRYPTED":
 			self.currentState = "MSGSTATE_ENCRYPTED"
-			if not self.t0 == "":
-				print "TIME", time.time() - self.t0
 			mpotr.BeginLogging(self)
 		elif state == "SHUTDOWN_COMPLETE":
-			if not self.t0 == "":
-				print "SHUTDOWN TIME", time.clock() - self.t0
 			mpotr.Send_Epheremal(self)
 	def Start(self, startState=None):
 		self.currentState = startState
