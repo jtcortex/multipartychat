@@ -39,7 +39,7 @@ class MPOTRConnection(object):
 	def SetState(self, state):
 		self.currentState = state
 		if state == "ContInitiate":
-			mpotr.ContInitiate(self, self.users)
+			mpotr.Initiate(self, self.users, 1)
 		elif state == "DSKE":
 			mpotr.DSKE(self, self.session_id, self.users, 1)
 		elif state == "Verify":
@@ -57,7 +57,7 @@ class MPOTRConnection(object):
 			mpotr.Send_Epheremal(self)
 	def Start(self, startState=None):
 		self.currentState = startState
-		mpotr.Initiate(self, self.users)
+		mpotr.Initiate(self, self.users, 0)
 	
 	def Close(self):
 		print "Closed"

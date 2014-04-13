@@ -34,46 +34,37 @@ def SendMsg(user, message):
 	#print "MADE IT"
 	xchat.command("msg " + user + " " + '0x14' + message)
 
-def Initiate(connection, participants, sender=None):
+def Initiate(connection, participants, phase, sender=None):
 	'''
 	Initiate the initial request for off-the-record converation
 	
 	@param connection: Current mpOTR connection
 	@type connection: MPOTRConnection instance
 	'''
-	
-	session_id = None
-	sent = 0 
-	received = 0
-	consensus = []
-	Broadcast(participants)
-	CreateSession(participants, connection)
-
-def ContInitiate(connection, participants):
-
-	z = [y for x,y in connection.usermap.items()]
-	z.sort()
-	z = "".join(z)
-	hash_object = hashlib.sha256(z)
-	hex_dig = hash_object.hexdigest()
-	connection.session_id = hex_dig
-	DSKE(connection, connection.session_id, participants, 0)
-#	if result == 1:
-#		for E,Y in R:
-#			assign()
-#	else:
-#		Abort()
-
-#	groupKey = GKA(participants, R)
-#	if gk == None:
-#		Abort()
-#	Attest()
+	if phase == 0:
+		session_id = None
+		sent = 0 
+		received = 0
+		consensus = []
+		Broadcast(participants)
+		CreateSession(participants, connection)
+	elif phase == 1:
+		z = [y for x,y in connection.usermap.items()]
+		z.sort()
+		z = "".join(z)
+		hash_object = hashlib.sha256(z)
+		hex_dig = hash_object.hexdigest()
+		connection.session_id = hex_dig
+		DSKE(connection, connection.session_id, participants, 0)
 
 def CreateSession(participants, connection):
-	''' Invoked in the context of party X, the algorithm returns a 
-	unique (with high probability) chatroom identifier for the set
-	P upon successful completion 
 	'''
+	Send out random number to be used to create Session ID
+	
+	@param connection: Current mpOTR connection
+	@type connection: MPOTRConnection instance
+	'''
+	
 	r = random.getrandbits(128)
 	randnum = str.encode(str(r))
 	connection.usermap.update({xchat.get_prefs("irc_nick1"):randnum})
@@ -89,13 +80,14 @@ def DSKE(connection, sid, participants, phase=None):
 	@type connection: MPOTRConnection instance
 	@param sid: Current SessionID
 	@type sid: Integer
+	@param phase: Phase of the DSKE routine
+	@type phase: integer in range (0,2)
 	"""
 	newlist = []
 	# Create public/private keypairs and add them to keytable
 	# Send keys out to participants and wait for responses
 	if phase == 0:
 		connection.keypair = EC_GenerateKey(415)
-#	path = "/home/jt/Documents/mpOTR-Masters/code/Mpotr/key.pem"
 		connection.private_pem = EC_Private(connection.keypair)
 		connection.public_pem = EC_Public(connection.keypair)
 		z = EC.load_pub_key_bio(BIO.MemoryBuffer(connection.public_pem))
@@ -127,17 +119,21 @@ def DSKE(connection, sid, participants, phase=None):
 			return 1
 
 def GKA(connection, keytable, state):
+	'''
+	Group Key Agreement protocol (implemented as pairwise interaction)
+	
+	@param connection: Current mpOTR connection
+	@type connection: MPOTRConnection instance
+	@param keytable: 
+	@param state: Current state of the GKA routine
+	@type state: Integer in range (0,1)
+	'''
 	
 	if state == 0:
 		z = connection.keypair
 		randgroupkey = random.getrandbits(128)
-		#iv = random.getrandbits(128)
-		#iv = '\0' * 16
 		iv = os.urandom(16)
-		#print "IV SEND", b64encode(iv)
-		#randnum = str.encode(str(randgroupkey))
 		randnum = str(randgroupkey)
-		#print randnum
 		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
 		for x,y in connection.keytable.items():
 			if not x == xchat.get_prefs("irc_nick1"):
@@ -145,10 +141,7 @@ def GKA(connection, keytable, state):
 				newy = ec_from_public_bin(biny)
 				z_shared = z.compute_dh_key(newy)	
 				encMsg = AES_Encrypt(b64encode(z_shared),b64encode(iv),b64encode(randnum))
-				#decMsg = AES_Decrypt(b64encode(z_shared), b64encode(iv), encMsg)
-				#print b64decode(decMsg)
 				fullMsg = b64encode(iv) + encMsg
-		#		print "FULL MSG", fullMsg
 				SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.userkeytable.items()]
@@ -157,9 +150,7 @@ def GKA(connection, keytable, state):
 		hash_object = hashlib.sha256(randnums)
     		hex_dig = hash_object.hexdigest()
 		connection.groupkey = hex_dig
-		#print "GROUP KEY", connection.groupkey
 		connection.SetState("MSGSTATE_ENCRYPTED")
-		#print "Decrypted", AES_Decrypt(
 		
 def GetIV():
 	return os.urandom(16)
@@ -204,7 +195,6 @@ def SendAssociation(hashval):
 def SendKey(key):
 
 	msg = b"0x0a".decode("base64")
-	#msg = msg + binascii.b2a_base64(key)
 	msg = msg + key
 	return msg
 
