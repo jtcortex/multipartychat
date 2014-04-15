@@ -46,8 +46,8 @@ def Initiate(connection, participants, phase, sender=None):
 		sent = 0 
 		received = 0
 		consensus = []
-		Broadcast(participants)
-		CreateSession(participants, connection)
+		#Broadcast(participants)
+		SessionID(participants, connection)
 	elif phase == 1:
 		z = [y for x,y in connection.usermap.items()]
 		z.sort()
@@ -57,7 +57,7 @@ def Initiate(connection, participants, phase, sender=None):
 		connection.session_id = hex_dig
 		DSKE(connection, connection.session_id, participants, 0)
 
-def CreateSession(participants, connection):
+def SessionID(participants, connection):
 	'''
 	Send out random number to be used to create Session ID
 	

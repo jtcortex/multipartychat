@@ -9,7 +9,7 @@ from multiprocessing import Process
 class Simulation():
 	def __init__(self):
 		self.q = Queue.Queue()
-		self.users = 4
+		self.users = 4.0
 		self.userlist = []
 		pass
 		
@@ -18,10 +18,11 @@ class Simulation():
 		server = Server()
 		for u in range(0, self.users):
 			user = User()
+			user.responseProb = 1.0/self.users
 			self.userlist.append(user)
 		
 		
-		self.userlist[0].setup()
+		self.userlist[0].setup(self)
 		
 
 class Server():
@@ -40,9 +41,13 @@ class Message():
 class User():
 	def __init__(self):
 		self.distance = random.randrange(20, 400)
+		self.responseProb = None
 
-	def setup(self):
-		print "YESS"
+	def setup(self, sim):
+		self.Broadcast(sim.users, "hey")
+		
+	def Broadcast(self, participants, msg):
+		print msg
 
 def test():
 	print "Hello world"
