@@ -7,6 +7,8 @@ import sys,random,hashlib,binascii,os,math
 import re
 import xchat
 import time
+sys.path.append("C:\Users\jt\mpOTR-Masters\code")
+import broadcast
 
 # Crypto Libraries
 from M2Crypto import EC
@@ -19,20 +21,20 @@ debug = False
 # State Module
 from transition import *
 
-def Broadcast(participants, msg=None):
+#def Broadcast(participants, msg=None):
 	
-	for y in participants:
-		if msg == None:
-			if not xchat.nickcmp(y.nick, xchat.get_prefs("irc_nick1")) == 0:
-				xchat.command("msg " + y.nick + " " + "!Initiate!")
-		else:
-			if not xchat.nickcmp(y.nick, xchat.get_prefs("irc_nick1")) == 0:
-				xchat.command("msg " + y.nick + " " + msg)
-	return xchat.EAT_ALL
+#	for y in participants:
+#		if msg == None:
+#			if not xchat.nickcmp(y.nick, xchat.get_prefs("irc_nick1")) == 0:
+#				xchat.command("msg " + y.nick + " " + "!Initiate!")
+#		else:
+#			if not xchat.nickcmp(y.nick, xchat.get_prefs("irc_nick1")) == 0:
+#				xchat.command("msg " + y.nick + " " + msg)
+#	return xchat.EAT_ALL
 	
-def SendMsg(user, message):
+#def SendMsg(user, message):
 	#print "MADE IT"
-	xchat.command("msg " + user + " " + '0x14' + message)
+#	xchat.command("msg " + user + " " + '0x14' + message)
 
 def Initiate(connection, participants, phase, sender=None):
 	'''
@@ -67,10 +69,10 @@ def SessionID(participants, connection):
 	
 	r = random.getrandbits(128)
 	randnum = str.encode(str(r))
-	connection.usermap.update({xchat.get_prefs("irc_nick1"):randnum})
+	connection.usermap.update({broadcast.getPrefs():randnum})
 	new_randnum = "!c_" + randnum
 	print "MADE IT HERE"
-	Broadcast(participants, new_randnum)
+	broadcast.Broadcast(participants, new_randnum)
 
 def DSKE(connection, sid, participants, phase=None):
 	"""
@@ -87,13 +89,13 @@ def DSKE(connection, sid, participants, phase=None):
 	# Create public/private keypairs and add them to keytable
 	# Send keys out to participants and wait for responses
 	if phase == 0:
-		connection.keypair = EC_GenerateKey(415)
+		connection.keypair = EC_GenerateKey(744)
 		connection.private_pem = EC_Private(connection.keypair)
 		connection.public_pem = EC_Public(connection.keypair)
 		z = EC.load_pub_key_bio(BIO.MemoryBuffer(connection.public_pem))
 		public_bin = ec_to_public_bin(connection.keypair)
-		connection.keytable.update({xchat.get_prefs("irc_nick1"):public_bin.encode("HEX")})
-		Broadcast(participants, SendKey(public_bin.encode("HEX")))
+		connection.keytable.update({broadcast.getPrefs():public_bin.encode("HEX")})
+		broadcast.Broadcast(participants, SendKey(public_bin.encode("HEX")))
 		return None
 
 	# Once all public keys are received, sort them and take the hash
@@ -105,8 +107,8 @@ def DSKE(connection, sid, participants, phase=None):
 	        hash_object = hashlib.sha256(pubkeys)
 	       	hex_dig = hash_object.hexdigest()
 		connection.keyhash = hex_dig
-		connection.associationtable.update({xchat.get_prefs("irc_nick1"):connection.keyhash})
-		Broadcast(connection.users, SendAssociation(hex_dig))
+		connection.associationtable.update({broadcast.getPrefs():connection.keyhash})
+		broadcast.Broadcast(connection.users, SendAssociation(hex_dig))
 		return None
 	# 
 	else:
@@ -134,15 +136,15 @@ def GKA(connection, keytable, state):
 		randgroupkey = random.getrandbits(128)
 		iv = os.urandom(16)
 		randnum = str(randgroupkey)
-		connection.userkeytable.update({xchat.get_prefs("irc_nick1"):randnum})
+		connection.userkeytable.update({broadcast.getPrefs():randnum})
 		for x,y in connection.keytable.items():
-			if not x == xchat.get_prefs("irc_nick1"):
+			if not x == broadcast.getPrefs():
 				biny = binascii.unhexlify(y)
 				newy = ec_from_public_bin(biny)
 				z_shared = z.compute_dh_key(newy)	
 				encMsg = AES_Encrypt(b64encode(z_shared),b64encode(iv),b64encode(randnum))
 				fullMsg = b64encode(iv) + encMsg
-				SendMsg(x,fullMsg)
+				broadcast.SendMsg(x,fullMsg)
 	else:
 		randnums = [y for x,y in connection.userkeytable.items()]
  	       	randnums.sort()
@@ -159,7 +161,7 @@ def AES_Encrypt(key,iv,msg):
 
 	key = b64decode(key)
 	iv = b64decode(iv)
-	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
+	cipher = EVP.Cipher('aes_128_cbc',key,iv,op=1)
 	v = cipher.update(msg)
 	v = v + cipher.final()
 	del cipher
@@ -171,7 +173,7 @@ def AES_Decrypt(key, iv, msg):
 	key = b64decode(key)
 	iv = b64decode(iv)
 	msg = b64decode(msg)
-	cipher = EVP.Cipher('aes_256_cfb', key, iv, op=0)
+	cipher = EVP.Cipher('aes_128_cbc', key, iv, op=0)
 	v = cipher.update(msg)
 	v = v + cipher.final()
 	return v
@@ -263,7 +265,7 @@ def BeginLogging(connection):
 	file.write("\n**** " + "BEGIN LOGGING AT " + time.strftime("%c") + "FOR SESSION ID " + connection.session_id)
 	
 def Send_Epheremal(connection):
-	Broadcast(connection.users, "YES")
+	broadcast.Broadcast(connection.users, "YES")
 	print "SHUT DOWN COMPLETE"
 
 #def AuthSend(M, sid, gk, ex):

@@ -2,17 +2,15 @@
 # simulation.py
 # Module to simulate many users over mpOTR protocol
 
-import Queue, random, multiprocessing
+import Queue, random, multiprocessing, socket, time, mpotr
 from multiprocessing import Process
 from multiprocessing.dummy import Pool as ThreadPool
-
-
+		
 class Simulation():
 	def __init__(self):
 		self.q = Queue.Queue()
 		self.users = 4.0
 		self.userlist = []
-		pass
 		
 	def Start(self):
 		
@@ -24,28 +22,6 @@ class Simulation():
 		
 		self.userlist[0].setup(self)
 		
-
-class Server():
-	def __init__(self):
-		self.q = Queue.Queue()
-		pass
-
-	def relay(self, receive, send, msg):
-		pass
-
-	def check(self, sim):
-		while not self.q.empty():
-			(x,y) = self.q.get_nowait()
-			for user in sim.userlist:
-				if not x == user:
-		#			this.relay(
-					print x
-			print y
-					
-
-	def Start():
-		pass
-	
 class Message():
 
 	def __init__(self):
@@ -71,15 +47,47 @@ class User(multiprocessing.Process):
 	def Receive(self, msg):
 		pass
 
-def test():
-	print "Hello world"
+def test(nick):
+	irc = 	'10.8.0.86'
+	port = 6667
+	channel = '#test'
+	sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sck.connect((irc, port))
+	sck.send('NICK ' + nick + '\r\n')
+	sck.send('USER supaBOT hostname supaBOT :guy Script\r\n')
+	sck.send('JOIN #test' + '\r\n')
+	data = ''
+	while True:
+		data = sck.recv(4096)
+		print data
+		if data.find('PING') != -1:
+			sck.send('PONG ' + data.split() [1] + '\r\n')
+		if data.find('?mpOTR?') != -1:
+			sck.send('PRIVMSG ' + 'carol' + ' :!mpOTR!' + '\r\n')
+		if data.find(':!c_') != -1:
+			print "GOT IT"
+	print sck.recv(4096)
 
 def main():
 #	pool = ThreadPool(4)
-	sim = Simulation()
-	sim.Start()
+	#sim = Simulation()
+	procs = []
+	for i in range(3):
+		nick = 'user'+str(i)
+		procs.append(multiprocessing.Process(target=test, args=[nick]))
+		
+	for proc in procs:
+		proc.start()
+		time.sleep(1)
+	#[proc.start() for proc in procs]
+	#test('simon')
+
+	#sim.Start()
 
 if __name__ == '__main__':
 	main()
+
+	
+	
 
 

@@ -22,6 +22,7 @@ from base64 import b64encode, b64decode
 # Ammend system path to include mpOTR library
 if os.name == "nt":
 	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
+	#sys.path.append("C:\Users\jt\mpOTR-Masters\code")
 	user = os.environ.get("USERNAME")
 	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\xchatlogs\\"
 	if not os.path.exists(logpath):
@@ -43,7 +44,7 @@ userlist = []
 m = MPOTRConnection(logpath)
 t0 = ""
 
-def broadcast(users, p2p, msg):
+def bcast(users, p2p, msg):
 	''' Send a message to all users in a channel '''
 	print msg
 	for x in users:
@@ -76,7 +77,7 @@ def mpotr_cb(word, word_eol, userdata):
 		m.SetUsers(xchat.get_list("users"))
 		setup()
 		if '-p2p' in word_eol:
-			broadcast(xchat.get_list("users"), 1)
+			bcast(xchat.get_list("users"), 1)
 		else:
 			synchronize()
 	elif word[1] == "y":
@@ -85,8 +86,8 @@ def mpotr_cb(word, word_eol, userdata):
 	elif word[1] == "shutdown":
 		digest = GetChatDigest(m.path)
 		m.digestTable.update({xchat.get_prefs("irc_nick1"):digest})
-		broadcast(xchat.get_list("users"), 0, "shutdown")
-		broadcast(xchat.get_list("users"), 0, '0x16' + str(digest))
+		bcast(xchat.get_list("users"), 0, "shutdown")
+		bcast(xchat.get_list("users"), 0, '0x16' + str(digest))
 	else:
 		xchat.prnt("Unknown action")
 	return xchat.EAT_ALL
@@ -123,14 +124,14 @@ def GetChatDigest(path):
 	
 def synchronize():
 	msg = "?mpOTR?"
-	broadcast(xchat.get_list("users"), 0, msg)
+	bcast(xchat.get_list("users"), 0, msg)
 
 def acknowledge():
 	xchat.command("msg " + SENDER + " !mpOTR!")
 
 def synchronizeAcknowledge():
 	msg = "!mpOTR_Init!"
-	broadcast(xchat.get_list("users"), 0, msg)
+	bcast(xchat.get_list("users"), 0, msg)
 
 def msg_cb(word, word_eol, userdata):
 	global SENDER
@@ -142,6 +143,7 @@ def msg_cb(word, word_eol, userdata):
 		INVITE = 1
 		print SENDER, "wishes to take this conversation off the record. Do you accept?"
 	elif ":!mpOTR!" in word:
+		print word
 		SENDER = GetSender(word[0])
 		for user in acceptlist:
 			if SENDER == user[0].nick:
@@ -175,7 +177,7 @@ def msg_cb(word, word_eol, userdata):
 			m.SetState("Verify")
 	elif ":shutdown" in word[3]:
 		digest = GetChatDigest(m.path)
-		broadcast(xchat.get_list("users"), 0, '0x16' + str(digest))
+		bcast(xchat.get_list("users"), 0, '0x16' + str(digest))
 	elif ":0x16" in word[3]:
 		name = GetSender(word[0])
 		digest = word[3].replace(":0x16", "")
@@ -193,7 +195,7 @@ def msg_cb(word, word_eol, userdata):
 		msg = randnum[24:]
 		#randnum = mpotr.AES_Decrypt(key, iv, msg)
 		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
-		m.userkeytable.update({name:b64decode(randnum)})
+		m.userkeytable.update({name:randnum})
 		#print m.userkeytable
 		if Receive_Participants(m, m.userkeytable) == 1:
 			m.SetState("GROUP_KEY_AUTHENTICATE")
