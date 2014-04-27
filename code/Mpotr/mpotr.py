@@ -161,7 +161,7 @@ def AES_Encrypt(key,iv,msg):
 
 	key = b64decode(key)
 	iv = b64decode(iv)
-	cipher = EVP.Cipher('aes_128_cbc',key,iv,op=1)
+	cipher = EVP.Cipher('aes_256_cfb',key,iv,op=1)
 	v = cipher.update(msg)
 	v = v + cipher.final()
 	del cipher
@@ -173,7 +173,7 @@ def AES_Decrypt(key, iv, msg):
 	key = b64decode(key)
 	iv = b64decode(iv)
 	msg = b64decode(msg)
-	cipher = EVP.Cipher('aes_128_cbc', key, iv, op=0)
+	cipher = EVP.Cipher('aes_256_cfb', key, iv, op=0)
 	v = cipher.update(msg)
 	v = v + cipher.final()
 	return v
