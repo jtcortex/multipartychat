@@ -62,8 +62,8 @@ def test(nick):
 		print data
 		if data.find('PING') != -1:
 			sck.send('PONG ' + data.split() [1] + '\r\n')
-		if data.find('?mpOTR?') != -1:
-			sck.send('PRIVMSG ' + 'carol' + ' :!mpOTR!' + '\r\n')
+		if data.find('?crypto?') != -1:
+			sck.send('PRIVMSG ' + 'carol' + ' :!crypto!' + '\r\n')
 		if data.find(':!c_') != -1:
 			print "GOT IT"
 	print sck.recv(4096)
