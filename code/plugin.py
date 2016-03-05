@@ -1,38 +1,29 @@
 
-'''
- * Multi-Party Off-The-Record Messaging Plugin (Experimental)
- *
- * Author: James Corcoran
- * Computer Engineering and Computer Science Dept
- * JB Speed School of Engineering
- * University of Louisville, KY, USA
- *
- * Based on the work of Goldberg, et. al.
-'''
-
 __module_name__ = "plugin"
 __module_version__ = "0.1"
-__module_description__ = "X-Chat mpOTR plugin"
+__module_description__ = "X-Chat chat plugin"
 
 # Plugin/System/Crypto packages
 import xchat,sys,re,os, binascii, time, hashlib, threading
 import M2Crypto
 from base64 import b64encode, b64decode
 
-# Ammend system path to include mpOTR library
+# Ammend system path to include crypto library
 if os.name == "nt":
-	sys.path.append("C:\Users\jt\mpOTR-Masters\code\Mpotr")
-	#sys.path.append("C:\Users\jt\mpOTR-Masters\code")
+	# Add path in quotation
+	sys.path.append("C:\Users\...")
+	#sys.path.append("C:\Users\code")
 	user = os.environ.get("USERNAME")
 	logpath = "C:\Users\\" + user + "\AppData\Roaming\X-Chat 2\\xchatlogs\\"
 	if not os.path.exists(logpath):
 		os.makedirs(logpath)
 else:	
-	sys.path.append("/home/jt/Documents/mpOTR-Masters/code/Mpotr")
+	# Add path on *nix system
+	sys.path.append("/home/...")
 	logpath = "/tmp/xchatlogs/"
 	if not os.path.exists(logpath):
 		os.makedirs(logpath)
-import mpotr
+import crypto
 from transition import *
 
 ## Some global variables for the script
@@ -41,7 +32,7 @@ INVITE = 0
 FLAG = 0
 acceptlist = []
 userlist = []
-m = MPOTRConnection(logpath)
+m = CRYPTOConnection(logpath)
 t0 = ""
 
 def bcast(users, p2p, msg):
@@ -54,11 +45,11 @@ def bcast(users, p2p, msg):
 	
 def encrypted_broadcast(users, msg, key):
 	global FLAG
-	iv = mpotr.GetIV()
+	iv = crypto.GetIV()
 	file = m.path
 	f = open(file, 'a')
 	f.write("\n" + time.strftime("%b") + " " + time.strftime("%a") + " " + time.strftime("%d") + " " + time.strftime("%X") + " <" + xchat.get_prefs("irc_nick1")	+ "> " + msg)
-	encMsg = mpotr.AES_Encrypt(b64encode(key), b64encode(iv), b64encode(msg))
+	encMsg = crypto.AES_Encrypt(b64encode(key), b64encode(iv), b64encode(msg))
 	sendMsg = b64encode(iv) + encMsg
 	for x in users:
 		if not xchat.nickcmp(x.nick, xchat.get_prefs("irc_nick1")) == 0:
@@ -66,13 +57,13 @@ def encrypted_broadcast(users, msg, key):
 	FLAG = 0
 	return xchat.EAT_ALL
 
-def mpotr_cb(word, word_eol, userdata):
-	''' Callback for /mpotr command '''
+def crypto_cb(word, word_eol, userdata):
+	''' Callback for /crypto command '''
 	global m
 	global t0
 	if len(word) < 2:
 		print "\nAvailable actions:"
-		print "     auth - initiate mpOTR session and authenticate participants"
+		print "     auth - initiate crypto session and authenticate participants"
 	elif word[1] == "auth":
 		m.SetUsers(xchat.get_list("users"))
 		setup()
@@ -123,14 +114,14 @@ def GetChatDigest(path):
 	
 	
 def synchronize():
-	msg = "?mpOTR?"
+	msg = "?crypto?"
 	bcast(xchat.get_list("users"), 0, msg)
 
 def acknowledge():
-	xchat.command("msg " + SENDER + " !mpOTR!")
+	xchat.command("msg " + SENDER + " !crypto!")
 
 def synchronizeAcknowledge():
-	msg = "!mpOTR_Init!"
+	msg = "!crypto_Init!"
 	bcast(xchat.get_list("users"), 0, msg)
 
 def msg_cb(word, word_eol, userdata):
@@ -138,11 +129,11 @@ def msg_cb(word, word_eol, userdata):
 	global INVITE
 	global acceptlist
 	global m
-	if ":?mpOTR?" in word:
+	if ":?crypto?" in word:
 		SENDER = GetSender(word[0])
 		INVITE = 1
 		print SENDER, "wishes to take this conversation off the record. Do you accept?"
-	elif ":!mpOTR!" in word:
+	elif ":!crypto!" in word:
 		print word
 		SENDER = GetSender(word[0])
 		for user in acceptlist:
@@ -151,7 +142,7 @@ def msg_cb(word, word_eol, userdata):
 		if allAccept() == 1:
 			synchronizeAcknowledge()
 			m.Start()
-	elif ":!mpOTR_Init!" in word:
+	elif ":!crypto_Init!" in word:
 		setup()
 		SENDER = GetSender(word[0])
 		m.Start()
@@ -184,7 +175,7 @@ def msg_cb(word, word_eol, userdata):
 		m.digestTable.update({name:digest})
 		if Receive_Participants(m, m.digestTable) == 1:
 			m.SetState("SHUTDOWN_COMPLETE")
-	# Perform an exchange between all users of the random values for the GKA
+	# Perform an exchange between all users of the random values for the key agreement
 	elif ":0x14" in word[3]:
 		name = GetSender(word[0])
 		randnum = word[3].replace(":0x14", "")
@@ -193,8 +184,8 @@ def msg_cb(word, word_eol, userdata):
 		iv = randnum[:24]
 		#print "IV", iv
 		msg = randnum[24:]
-		#randnum = mpotr.AES_Decrypt(key, iv, msg)
-		randnum = mpotr.AES_Decrypt(b64encode(key), iv, msg)
+		#randnum = crypto.AES_Decrypt(key, iv, msg)
+		randnum = crypto.AES_Decrypt(b64encode(key), iv, msg)
 		m.userkeytable.update({name:randnum})
 		#print m.userkeytable
 		if Receive_Participants(m, m.userkeytable) == 1:
@@ -205,7 +196,7 @@ def msg_cb(word, word_eol, userdata):
 		msg = word[3]
 		iv = msg[1:25]
 		newmsg = msg[25:]
-		msg = mpotr.AES_Decrypt(b64encode(key), iv, newmsg)
+		msg = crypto.AES_Decrypt(b64encode(key), iv, newmsg)
 		file = m.path
 		f = open(file, 'a')
 		f.write("\n" + time.strftime("%b") + " " + time.strftime("%a") + " " + time.strftime("%d") + " " + time.strftime("%X") + " <" + name	+ "> " + b64decode(msg))
@@ -224,7 +215,7 @@ def GetKey(name):
 			key = y
 			z = m.keypair
 			biny = binascii.unhexlify(y)
-			newy = mpotr.ec_from_public_bin(biny)
+			newy = crypto.ec_from_public_bin(biny)
 			z_shared = z.compute_dh_key(newy)
 			return z_shared
 	return None
@@ -305,18 +296,8 @@ def test_cb(word, word_eol, userdata):
 
 def printBanner():
 	
-	print "*****************************************************************"
-	print "*      *         *        * * * *  * * * *  * * * * *  * * * *  *"
-	print "*     * *       *  *      *     *  *     *      *      *     *  *"
-	print "*    *   *     *    *     * * * *  *     *      *      * * * *  *"
-	print "*   *     *   *      *    *        *     *      *      * *      *"
-	print "*  *       * *        *   *        *     *      *      *   *    *"
-	print "* *         *          *  *        * * * *      *      *     *  *"
-	print "*****************************************************************"
-	print "*    Multi-Party Off-the-record Messaging plugin for X-Chat     *"
-	print "*****************************************************************"
 	print "** WARNING: DO NOT ASSUME THAT ANY SYSTEM IS 100% SECURE. USE YOUR BEST JUDGEMENT **"
-	print "-> This conversation has been taken off the record"
+	print "-> This conversation has been encrypted"
 	print "-> Say Hi!"
 
 #Hook anything that is typed to see if msgs should be encrypted
@@ -324,4 +305,4 @@ xchat.hook_command('', test_cb)
 xchat.hook_print("Your Message", say_cb)
 xchat.hook_print("Message send", say_cb)
 xchat.hook_server("PRIVMSG", msg_cb)
-xchat.hook_command("MPOTR", mpotr_cb, help="/MPOTR <action> Performs mpOTR action for channel participants")
+xchat.hook_command("CRYPTO", crypto_cb, help="/CRYPTO <action> Performs crypto action for channel participants")
